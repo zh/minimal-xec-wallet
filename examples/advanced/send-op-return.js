@@ -184,7 +184,7 @@ async function sendOpReturn () {
     console.log('   • Digital signatures')
     console.log('   • Public announcements')
     console.log('   • Hash commitments')
-    
+
     // Ensure process exits cleanly
     process.exit(0)
   } catch (err) {

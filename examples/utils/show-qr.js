@@ -68,10 +68,10 @@ function generateCustomQR (text, size) {
   })
 }
 
-function getQROptions (size) {
-  // This function is kept for compatibility but we use generateCustomQR now
-  return { small: true }
-}
+// function getQROptions (size) {
+//   // This function is kept for compatibility but we use generateCustomQR now
+//   return { small: true }
+// }
 
 function showQRCode () {
   try {

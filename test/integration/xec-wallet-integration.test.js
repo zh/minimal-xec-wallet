@@ -28,6 +28,12 @@ describe('#Integration Tests - XEC Wallet with Chronik API', () => {
   const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
 
   beforeEach(async () => {
+    // Clear address cache for test isolation
+    const ecashaddr = require('ecashaddrjs')
+    if (ecashaddr.encodeCashAddress && ecashaddr.encodeCashAddress.clearCache) {
+      ecashaddr.encodeCashAddress.clearCache()
+    }
+
     const advancedOptions = {
       chronikUrls: CHRONIK_URLS
     }
@@ -289,20 +295,41 @@ describe('#Integration Tests - XEC Wallet with Chronik API', () => {
     })
   })
 
-  // eToken tests are for Phase 2
-  describe('#eToken Operations - Phase 2 (Not Implemented)', () => {
-    it('should throw not implemented errors for eToken operations', () => {
-      assert.throws(() => {
-        wallet.sendETokens({})
-      }, /Phase 2/)
+  // eToken operations are now fully implemented via HybridTokenManager
+  describe('#eToken Operations - Hybrid SLP/ALP Support', () => {
+    it('should have eToken methods available and validate inputs', async () => {
+      // These methods should now exist and validate inputs rather than throw "Phase 2" errors
 
-      assert.throws(() => {
-        wallet.listETokens()
-      }, /Phase 2/)
+      try {
+        await wallet.sendETokens() // No token ID provided
+        assert.fail('sendETokens should validate inputs')
+      } catch (err) {
+        assert.include(err.message, 'Token ID is required')
+      }
 
-      assert.throws(() => {
-        wallet.getETokenBalance({ tokenId: 'test' })
-      }, /Phase 2/)
+      try {
+        await wallet.getETokenBalance({}) // No token ID provided
+        assert.fail('getETokenBalance should validate inputs')
+      } catch (err) {
+        assert.include(err.message, 'Token ID is required')
+      }
+
+      try {
+        await wallet.getETokenData() // No token ID provided
+        assert.fail('getETokenData should validate inputs')
+      } catch (err) {
+        assert.include(err.message, 'Token ID is required')
+      }
+
+      // listETokens should work or throw appropriate errors (not "Phase 2")
+      try {
+        const tokens = await wallet.listETokens()
+        // If successful, should return an array
+        assert.isArray(tokens)
+      } catch (err) {
+        // Should not contain "Phase 2" error message
+        assert.notInclude(err.message, 'Phase 2')
+      }
     })
   })
 })

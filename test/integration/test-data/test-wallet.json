@@ -1,0 +1,13 @@
+{
+  "testWallet": {
+    "description": "Test wallet for integration tests",
+    "created": "2025-08-15T00:00:00.000Z",
+    "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    "xecAddress": "ecash:qp1234567890abcdef1234567890abcdef1234567890",
+    "privateKey": "L1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "publicKey": "021234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12",
+    "hdPath": "m/44'/899'/0'/0/0",
+    "fee": 1.2,
+    "enableDonations": false
+  }
+}

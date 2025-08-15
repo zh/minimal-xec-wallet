@@ -123,7 +123,12 @@ async function sendXec () {
 
     // Debug UTXO structure before sending
     const utxos = wallet.utxos.utxoStore.xecUtxos
-    console.log('🔍 Debug: First UTXO structure:', JSON.stringify(utxos[0], null, 2))
+    // Safe JSON stringify to handle BigInt values
+    const safeStringify = (obj) => {
+      return JSON.stringify(obj, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value, 2)
+    }
+    console.log('🔍 Debug: First UTXO structure:', safeStringify(utxos[0]))
 
     // Send the transaction
     const txid = await wallet.sendXec(outputs)

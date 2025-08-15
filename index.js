@@ -18,6 +18,7 @@ const AdapterRouter = require('./lib/adapters/router')
 const OpReturn = require('./lib/op-return')
 const ConsolidateUtxos = require('./lib/consolidate-utxos.js')
 const KeyDerivation = require('./lib/key-derivation')
+const HybridTokenManager = require('./lib/hybrid-token-manager')
 
 // let this
 
@@ -74,6 +75,7 @@ class MinimalXECWallet {
     this.tokens = new Tokens(chronikOptions)
     this.opReturn = new OpReturn(chronikOptions)
     this.consolidateUtxos = new ConsolidateUtxos(this)
+    this.hybridTokens = new HybridTokenManager(chronikOptions)
 
     this.temp = []
     this.isInitialized = false
@@ -201,7 +203,7 @@ class MinimalXECWallet {
 
         if (startsWithKorL && is52Chars) {
           // WIF Private Key
-          const { privateKey, publicKey, address } = this._deriveFromWif(mnemonicOrWif)
+          const { publicKey, address } = this._deriveFromWif(mnemonicOrWif)
           walletInfo.privateKey = mnemonicOrWif
           walletInfo.publicKey = publicKey
           walletInfo.mnemonic = null
@@ -548,6 +550,12 @@ class MinimalXECWallet {
         await this.initialize()
       }
 
+      // Filter out token UTXOs for regular XEC transactions to prevent token burning
+      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => {
+        // Only include UTXOs that don't have token data
+        return !utxo.token
+      })
+
       return await this.sendXecLib.sendXec(
         outputs,
         {
@@ -558,7 +566,7 @@ class MinimalXECWallet {
           privateKey: this.walletInfo.privateKey,
           publicKey: this.walletInfo.publicKey
         },
-        this.utxos.utxoStore.xecUtxos
+        xecOnlyUtxos
       )
     } catch (err) {
       throw this._sanitizeError(err, 'XEC send failed')
@@ -566,9 +574,47 @@ class MinimalXECWallet {
   }
 
   // Send eTokens. Returns a promise that resolves into a TXID.
-  sendETokens (output, satsPerByte, opts = {}) {
-    // TODO: Phase 2 - eToken operations
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  async sendETokens (tokenId, outputs, satsPerByte = this.fee) {
+    try {
+      // Wait for wallet to be initialized
+      await this.walletInfoPromise
+
+      if (!this.isInitialized) {
+        await this.initialize()
+      }
+
+      // Validate inputs
+      if (!tokenId || typeof tokenId !== 'string') {
+        throw new Error('Token ID is required and must be a string')
+      }
+
+      if (!Array.isArray(outputs) || outputs.length === 0) {
+        throw new Error('Outputs array is required and cannot be empty')
+      }
+
+      // Ensure UTXOs are loaded before token operations
+      if (!this.utxos || !this.utxos.utxoStore || !Array.isArray(this.utxos.utxoStore.xecUtxos)) {
+        throw new Error('Wallet UTXOs not loaded. Try calling initialize() first.')
+      }
+
+      // Use hybrid token manager for protocol detection and routing
+      return await this.hybridTokens.sendTokens(
+        tokenId,
+        outputs,
+        {
+          mnemonic: this.walletInfo.mnemonic,
+          xecAddress: this.walletInfo.xecAddress,
+          hdPath: this.walletInfo.hdPath,
+          fee: this.fee,
+          privateKey: this.walletInfo.privateKey,
+          publicKey: this.walletInfo.publicKey
+        },
+        this.utxos.utxoStore.xecUtxos,
+        satsPerByte
+      )
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken send failed')
+    }
   }
 
   // Send all XEC to an address
@@ -607,9 +653,15 @@ class MinimalXECWallet {
         await this.initialize()
       }
 
+      // Filter out token UTXOs for OP_RETURN transactions to prevent token burning
+      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => {
+        // Only include UTXOs that don't have token data
+        return !utxo.token
+      })
+
       return await this.opReturn.sendOpReturn(
         this.walletInfo,
-        this.utxos.utxoStore.xecUtxos,
+        xecOnlyUtxos,
         msg,
         prefix,
         xecOutput,
@@ -703,25 +755,151 @@ class MinimalXECWallet {
     }
   }
 
-  // Phase 2 eToken operations (stubbed)
-  listETokens (xecAddress) {
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  // eToken operations - Hybrid SLP/ALP token support
+  async listETokens (xecAddress) {
+    try {
+      // Wait for wallet to be initialized
+      await this.walletInfoPromise
+
+      // Determine address to use
+      let addr = xecAddress
+      if (!xecAddress && this.walletInfo && this.walletInfo.xecAddress) {
+        addr = this.walletInfo.xecAddress
+      }
+
+      if (!addr) {
+        throw new Error('No address provided and wallet not initialized')
+      }
+
+      // Validate address if provided
+      if (xecAddress) {
+        this._validateAddress(xecAddress)
+      }
+
+      // Use hybrid token manager to list tokens from address
+      return await this.hybridTokens.listTokensFromAddress(addr)
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken listing failed')
+    }
   }
 
-  getETokenBalance (inObj = {}) {
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  async getETokenBalance (inObj = {}) {
+    try {
+      // Wait for wallet to be initialized
+      await this.walletInfoPromise
+
+      // Extract tokenId from input object
+      const { tokenId, xecAddress } = inObj
+
+      if (!tokenId || typeof tokenId !== 'string') {
+        throw new Error('Token ID is required and must be a string')
+      }
+
+      // Determine address to use
+      let addr = xecAddress
+      if (!xecAddress && this.walletInfo && this.walletInfo.xecAddress) {
+        addr = this.walletInfo.xecAddress
+      }
+
+      if (!addr) {
+        throw new Error('No address provided and wallet not initialized')
+      }
+
+      // Validate address if provided
+      if (xecAddress) {
+        this._validateAddress(xecAddress)
+      }
+
+      // Get UTXOs for the address and calculate balance
+      const utxos = await this.getUtxos(addr)
+      return await this.hybridTokens.getTokenBalance(tokenId, utxos.utxos)
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken balance query failed')
+    }
   }
 
-  burnETokens (qty, tokenId, satsPerByte) {
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  async burnETokens (tokenId, amount, satsPerByte = this.fee) {
+    try {
+      // Wait for wallet to be initialized
+      await this.walletInfoPromise
+
+      if (!this.isInitialized) {
+        await this.initialize()
+      }
+
+      // Validate inputs
+      if (!tokenId || typeof tokenId !== 'string') {
+        throw new Error('Token ID is required and must be a string')
+      }
+
+      if (!amount || typeof amount !== 'number' || amount <= 0) {
+        throw new Error('Amount is required and must be a positive number')
+      }
+
+      // Use hybrid token manager for protocol detection and routing
+      return await this.hybridTokens.burnTokens(
+        tokenId,
+        amount,
+        {
+          mnemonic: this.walletInfo.mnemonic,
+          xecAddress: this.walletInfo.xecAddress,
+          hdPath: this.walletInfo.hdPath,
+          fee: this.fee,
+          privateKey: this.walletInfo.privateKey,
+          publicKey: this.walletInfo.publicKey
+        },
+        this.utxos.utxoStore.utxos,
+        satsPerByte
+      )
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken burn failed')
+    }
   }
 
-  burnAllETokens (tokenId) {
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  async burnAllETokens (tokenId, satsPerByte = this.fee) {
+    try {
+      // Wait for wallet to be initialized
+      await this.walletInfoPromise
+
+      if (!this.isInitialized) {
+        await this.initialize()
+      }
+
+      // Validate inputs
+      if (!tokenId || typeof tokenId !== 'string') {
+        throw new Error('Token ID is required and must be a string')
+      }
+
+      // Use hybrid token manager for protocol detection and routing
+      return await this.hybridTokens.burnAllTokens(
+        tokenId,
+        {
+          mnemonic: this.walletInfo.mnemonic,
+          xecAddress: this.walletInfo.xecAddress,
+          hdPath: this.walletInfo.hdPath,
+          fee: this.fee,
+          privateKey: this.walletInfo.privateKey,
+          publicKey: this.walletInfo.publicKey
+        },
+        this.utxos.utxoStore.utxos
+      )
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken burn all failed')
+    }
   }
 
-  getETokenData (tokenId) {
-    throw new Error('eToken operations not yet implemented - Phase 2')
+  async getETokenData (tokenId, withTxHistory = false, sortOrder = 'DESCENDING') {
+    try {
+      // Validate inputs
+      if (!tokenId || typeof tokenId !== 'string') {
+        throw new Error('Token ID is required and must be a string')
+      }
+
+      // Use hybrid token manager to get comprehensive token data
+      return await this.hybridTokens.getTokenData(tokenId, withTxHistory, sortOrder)
+    } catch (err) {
+      throw this._sanitizeError(err, 'eToken data query failed')
+    }
   }
 }
 
