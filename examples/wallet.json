@@ -1,0 +1,11 @@
+{
+  "description": "New XEC Wallet",
+  "created": "2025-08-15T04:08:15.166Z",
+  "mnemonic": "bubble leader travel summer unit fault nation error firm mad leisure urge",
+  "xecAddress": "ecash:qpg562clu3350dnk3z3lenvxgyexyt7j6vnz4qg606",
+  "privateKey": "efa59377256849360662d4af7b39851f658a188b93862889ddf37b45e88c5784",
+  "publicKey": "031d85d1053f528a80b3d44fbef5ba081a4f6a9ca65982565cbfa92165decf8319",
+  "hdPath": "m/44'/899'/0'/0/0",
+  "fee": 1.2,
+  "enableDonations": false
+}

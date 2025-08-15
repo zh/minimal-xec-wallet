@@ -1,0 +1,11 @@
+{
+  "description": "New XEC Wallet",
+  "created": "2025-08-15T08:15:58.216Z",
+  "mnemonic": "seminar insane dawn cricket innocent mule just various grunt fresh door cook",
+  "xecAddress": "ecash:qrw53puyg5ksdvg4wje4yn6qn0q4vmsffu07hzn5fr",
+  "privateKey": "98cd07e7ec9540406f9707223c1f5ca259fe5c7c051a351cbffaf1efbcfd516f",
+  "publicKey": "0430b74d8374f71e211927610e2aed2c7a24f6ca530a31e0775cde5762ce039fe630b74d8374f71e211927610e2aed2c7a24f6ca530a31e0775cde5762ce039fe6",
+  "hdPath": "m/44'/899'/0'/0/0",
+  "fee": 1.2,
+  "enableDonations": false
+}
