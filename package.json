@@ -17,9 +17,8 @@
     "docs": "./node_modules/.bin/apidoc -i lib/ -o docs",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "coverage:report": "nyc --reporter=html mocha test/unit/ --exit",
-    "build:dev": "browserify index.js -p esmify -t [ babelify --global true --presets [ @babel/preset-env ] --sourceType unambiguous ] --s MinimalXecWallet -o dist/minimal-xec-wallet.js",
-    "build": "browserify index.js -p esmify -t [ babelify --global true --presets [ @babel/preset-env ] --sourceType unambiguous ] --s MinimalXecWallet | terser --compress --mangle -o dist/minimal-xec-wallet.min.js"
-
+    "build:dev": "browserify index.js --browser-field -t [ ./transform-import-meta.js --global ] -p esmify -t [ babelify --global true --presets [ @babel/preset-env ] --sourceType unambiguous ] --s MinimalXecWallet -o dist/minimal-xec-wallet.js",
+    "build": "browserify index.js --browser-field -t [ ./transform-import-meta.js --global ] -p esmify -t [ babelify --global true --presets [ @babel/preset-env ] --sourceType unambiguous ] --s MinimalXecWallet | terser --compress --mangle -o dist/minimal-xec-wallet.min.js"
   },
   "keywords": [
     "ecash",
@@ -57,8 +56,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.3",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@babel/preset-env": "^7.28.3",
+    "babel-plugin-transform-import-meta": "^2.3.3",
     "babelify": "^10.0.0",
+    "browser-resolve": "^2.0.0",
     "browserify": "17.0.0",
     "chai": "4.2.0",
     "coveralls": "3.1.0",
@@ -76,6 +79,7 @@
     "semantic-release": "19.0.3",
     "sinon": "9.2.0",
     "standard": "16.0.4",
+    "through2": "^4.0.2",
     "tinyify": "3.0.0"
   },
   "release": {
@@ -87,7 +91,8 @@
     ]
   },
   "browser": {
-    "ecash-lib": "ecash-lib/dist/indexBrowser.js"
+    "ecash-lib": "ecash-lib/dist/indexBrowser.js",
+    "ecash-lib/dist/ffi/ecash_lib_wasm_browser.js": "./browser-shims/ecash_lib_wasm_browser.js"
   },
   "husky": {
     "hooks": {

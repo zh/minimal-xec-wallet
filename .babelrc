@@ -4,11 +4,15 @@
       "@babel/preset-env",
       {
         "targets": {
-          "browsers": ["> 1%", "last 2 versions"]
+          "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
         },
-        "modules": "commonjs"
+        "modules": "commonjs",
+        "loose": true
       }
     ]
+  ],
+  "plugins": [
+    "babel-plugin-transform-import-meta"
   ],
   "sourceType": "unambiguous"
 }
