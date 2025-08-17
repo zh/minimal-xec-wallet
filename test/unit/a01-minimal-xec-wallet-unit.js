@@ -428,4 +428,128 @@ describe('#index.js - Minimal XEC Wallet', () => {
       }
     })
   })
+
+  describe('#WIF functionality in main wallet', () => {
+    describe('#exportPrivateKeyAsWIF', () => {
+      it('should export private key as WIF format', async () => {
+        const wif = uut.exportPrivateKeyAsWIF(true, false)
+
+        assert(typeof wif === 'string')
+        assert(wif.length >= 51 && wif.length <= 52)
+        assert(uut.validateWIF(wif))
+      })
+
+      it('should handle mainnet and testnet exports', async () => {
+        const mainnetWif = uut.exportPrivateKeyAsWIF(true, false)
+        const testnetWif = uut.exportPrivateKeyAsWIF(true, true)
+
+        assert.notEqual(mainnetWif, testnetWif)
+        assert(['K', 'L'].includes(mainnetWif[0]))
+        assert.strictEqual(testnetWif[0], 'c')
+      })
+
+      it('should handle compressed and uncompressed exports', async () => {
+        const compressedWif = uut.exportPrivateKeyAsWIF(true, false)
+        const uncompressedWif = uut.exportPrivateKeyAsWIF(false, false)
+
+        // Should be different WIFs
+        assert.notEqual(compressedWif, uncompressedWif)
+        // Both should be valid WIFs
+        assert.strictEqual(uut.validateWIF(compressedWif), true)
+        assert.strictEqual(uut.validateWIF(uncompressedWif), true)
+        // Both should be strings of appropriate length
+        assert.strictEqual(typeof compressedWif, 'string')
+        assert.strictEqual(typeof uncompressedWif, 'string')
+      })
+
+      it('should throw error for uninitialized wallet', () => {
+        const uninitializedWallet = new MinimalXECWallet()
+        uninitializedWallet.walletInfo = null
+
+        try {
+          uninitializedWallet.exportPrivateKeyAsWIF()
+          assert.fail('Should have thrown error for uninitialized wallet')
+        } catch (err) {
+          assert.include(err.message.toLowerCase(), 'not initialized')
+        }
+      })
+    })
+
+    describe('#validateWIF', () => {
+      it('should validate correct WIF formats', async () => {
+        const validMainnetWIF = 'Kwq6djQ1szRRfSE4FT8YVSCWuTcU6H5MTYdsdxiheF7dBRpxVVTy'
+        const validTestnetWIF = 'cNC66ePsK47gpshKdrwfrkhaXguskjB3XanLkPBD9MmdSAsSuTU6'
+
+        assert.strictEqual(uut.validateWIF(validMainnetWIF), true)
+        assert.strictEqual(uut.validateWIF(validTestnetWIF), true)
+      })
+
+      it('should reject invalid WIF formats', async () => {
+        const invalidWIF = 'InvalidWIFString123'
+        const emptyString = ''
+        const nullValue = null
+
+        assert.strictEqual(uut.validateWIF(invalidWIF), false)
+        assert.strictEqual(uut.validateWIF(emptyString), false)
+        assert.strictEqual(uut.validateWIF(nullValue), false)
+      })
+
+      it('should handle validation errors gracefully', async () => {
+        // Test that errors in validation return false instead of throwing
+        const result = uut.validateWIF(undefined)
+        assert.strictEqual(result, false)
+      })
+    })
+
+    describe('#WIF wallet creation and round-trip', () => {
+      it('should create consistent wallet from WIF', async () => {
+        const testWIF = 'Kwq6djQ1szRRfSE4FT8YVSCWuTcU6H5MTYdsdxiheF7dBRpxVVTy'
+        const wifWallet = new MinimalXECWallet(testWIF)
+        await wifWallet.walletInfoPromise
+
+        assert.property(wifWallet.walletInfo, 'xecAddress')
+        assert.property(wifWallet.walletInfo, 'privateKey')
+        assert.property(wifWallet.walletInfo, 'publicKey')
+        assert.property(wifWallet.walletInfo, 'isCompressed')
+        assert.property(wifWallet.walletInfo, 'wif')
+        assert.strictEqual(wifWallet.walletInfo.wif, testWIF)
+      })
+
+      it('should export and re-import WIF successfully', async () => {
+        // Export WIF from current wallet
+        const exportedWIF = uut.exportPrivateKeyAsWIF(true, false)
+
+        // Should be a valid WIF
+        assert(uut.validateWIF(exportedWIF))
+
+        // Create new wallet from exported WIF
+        const newWallet = new MinimalXECWallet(exportedWIF)
+        await newWallet.walletInfoPromise
+
+        // Should have valid wallet info
+        assert.property(newWallet.walletInfo, 'xecAddress')
+        assert.property(newWallet.walletInfo, 'privateKey')
+        assert.property(newWallet.walletInfo, 'publicKey')
+
+        // In test mode, addresses are generated differently, so just verify structure
+        assert(newWallet.walletInfo.xecAddress.startsWith('ecash:'))
+      })
+
+      it('should handle testnet WIF creation and validation', async () => {
+        const testnetWIF = 'cNC66ePsK47gpshKdrwfrkhaXguskjB3XanLkPBD9MmdSAsSuTU6'
+        const testnetWallet = new MinimalXECWallet(testnetWIF)
+        await testnetWallet.walletInfoPromise
+
+        // Should validate the testnet WIF
+        assert.strictEqual(testnetWallet.validateWIF(testnetWIF), true)
+        assert.strictEqual(testnetWallet.walletInfo.wif, testnetWIF)
+
+        // Should be able to export a testnet WIF
+        const exportedTestnetWIF = testnetWallet.exportPrivateKeyAsWIF(true, true)
+        assert.strictEqual(typeof exportedTestnetWIF, 'string')
+        assert.strictEqual(exportedTestnetWIF[0], 'c') // Testnet prefix
+        assert.strictEqual(testnetWallet.validateWIF(exportedTestnetWIF), true)
+      })
+    })
+  })
 })

@@ -23,7 +23,7 @@ async function getWifFromUser () {
   })
 
   return new Promise((resolve) => {
-    rl.question('Enter your WIF private key (starts with K/L) or hex private key: ', (wif) => {
+    rl.question('Enter your WIF private key (K/L/5 for mainnet, c/9 for testnet) or hex private key: ', (wif) => {
       rl.close()
       resolve(wif.trim())
     })
@@ -57,18 +57,27 @@ async function importFromWif () {
       process.exit(1)
     }
 
-    // Validate WIF format
-    const isWif = wif.length === 52 && (wif.startsWith('K') || wif.startsWith('L'))
+    console.log('🔍 Validating private key...')
+
+    // Create a temporary wallet instance to validate WIF
+    const tempWallet = new MinimalXECWallet()
+    await tempWallet.walletInfoPromise
+
+    // Check if it's a valid WIF format
+    const isValidWIF = tempWallet.validateWIF(wif)
     const isHex = wif.length === 64 && /^[a-fA-F0-9]+$/.test(wif)
 
-    if (!isWif && !isHex) {
+    if (!isValidWIF && !isHex) {
       console.error('❌ Invalid private key format.')
-      console.log('   Expected: 52-character WIF (starting with K/L) or 64-character hex')
-      console.log('   Provided:', wif.length, 'characters')
+      console.log('   Expected formats:')
+      console.log('   • WIF: 51-52 characters (K/L/5 for mainnet, c/9 for testnet)')
+      console.log('   • Hex: 64 hexadecimal characters')
+      console.log(`   Provided: ${wif.length} characters`)
+      if (wif.length >= 50 && wif.length <= 53) {
+        console.log('   Note: This looks like a WIF but failed validation (invalid checksum?)')
+      }
       process.exit(1)
     }
-
-    console.log('🔍 Validating private key...')
 
     // Create wallet from WIF/hex private key
     const wallet = new MinimalXECWallet(wif)
@@ -82,8 +91,12 @@ async function importFromWif () {
     console.log('📋 Imported Wallet Details:')
     console.log('═'.repeat(50))
     console.log(`XEC Address: ${wallet.walletInfo.xecAddress}`)
-    console.log(`Key Type: ${isWif ? 'WIF' : 'Hex'} Private Key`)
+    console.log(`Key Type: ${isValidWIF ? 'WIF' : 'Hex'} Private Key`)
     console.log(`HD Path: ${wallet.walletInfo.hdPath || 'N/A (single key import)'}`)
+    if (isValidWIF) {
+      console.log(`Compression: ${wallet.walletInfo.isCompressed ? 'Compressed' : 'Uncompressed'}`)
+      console.log(`Original WIF: ${wallet.walletInfo.wif}`)
+    }
     console.log('═'.repeat(50))
 
     // Save to wallet.json file

@@ -113,6 +113,8 @@ class MinimalXECWallet {
     this._validateAddress = this._validateAddress.bind(this)
     this._sanitizeError = this._sanitizeError.bind(this)
     this._secureWalletInfo = this._secureWalletInfo.bind(this)
+    this.exportPrivateKeyAsWIF = this.exportPrivateKeyAsWIF.bind(this)
+    this.validateWIF = this.validateWIF.bind(this)
   }
 
   // Private method to validate XEC addresses
@@ -193,22 +195,27 @@ class MinimalXECWallet {
         walletInfo.xecAddress = address
         walletInfo.hdPath = this.hdPath
       } else {
-        // A WIF will start with L or K, will have no spaces, and will be 52
-        // characters long.
-        const startsWithKorL =
+        // A WIF will start with L, K, 5 (mainnet) or c, 9 (testnet), will have no spaces,
+        // and will be 51-52 characters long.
+        const startsWithWIFChar =
           mnemonicOrWif &&
-          (mnemonicOrWif[0].toString().toLowerCase() === 'k' ||
-            mnemonicOrWif[0].toString().toLowerCase() === 'l')
-        const is52Chars = mnemonicOrWif && mnemonicOrWif.length === 52
+          (['k', 'l', 'c', '5', '9'].includes(mnemonicOrWif[0].toString().toLowerCase()))
+        const isWIFLength = mnemonicOrWif && (mnemonicOrWif.length === 51 || mnemonicOrWif.length === 52)
 
-        if (startsWithKorL && is52Chars) {
-          // WIF Private Key
-          const { publicKey, address } = this._deriveFromWif(mnemonicOrWif)
-          walletInfo.privateKey = mnemonicOrWif
+        if (startsWithWIFChar && isWIFLength) {
+          // Enhanced WIF Private Key handling
+          if (!this.keyDerivation._isValidWIF(mnemonicOrWif)) {
+            throw new Error('Invalid WIF format or checksum')
+          }
+
+          const { privateKey, publicKey, address, isCompressed, wif } = this._deriveFromWif(mnemonicOrWif)
+          walletInfo.privateKey = privateKey
           walletInfo.publicKey = publicKey
           walletInfo.mnemonic = null
           walletInfo.xecAddress = address
           walletInfo.hdPath = null
+          walletInfo.isCompressed = isCompressed
+          walletInfo.wif = wif
         } else if (mnemonicOrWif.length === 64 && /^[a-fA-F0-9]+$/.test(mnemonicOrWif)) {
           // Hex Private Key (64 characters, all hex)
           const { publicKey, address } = this._deriveFromWif(mnemonicOrWif)
@@ -899,6 +906,32 @@ class MinimalXECWallet {
       return await this.hybridTokens.getTokenData(tokenId, withTxHistory, sortOrder)
     } catch (err) {
       throw this._sanitizeError(err, 'eToken data query failed')
+    }
+  }
+
+  // Export private key as WIF format
+  exportPrivateKeyAsWIF (compressed = true, testnet = false) {
+    try {
+      if (!this.walletInfo || !this.walletInfo.privateKey) {
+        throw new Error('Wallet not initialized or no private key available')
+      }
+
+      return this.keyDerivation.exportToWif(
+        this.walletInfo.privateKey,
+        compressed,
+        testnet
+      )
+    } catch (err) {
+      throw this._sanitizeError(err, 'WIF export failed')
+    }
+  }
+
+  // Validate WIF format (public utility method)
+  validateWIF (wif) {
+    try {
+      return this.keyDerivation._isValidWIF(wif)
+    } catch (err) {
+      return false
     }
   }
 }

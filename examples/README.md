@@ -79,9 +79,11 @@ node wallet-creation/create-new-wallet.js
 node wallet-creation/restore-from-mnemonic.js
 node wallet-creation/restore-from-mnemonic.js word1 word2 ... word12
 
-# Import from private key
-node wallet-creation/import-from-wif.js L1234...abcd
-node wallet-creation/import-from-wif.js 1234567890abcdef...
+# Import from private key (supports all WIF formats)
+node wallet-creation/import-from-wif.js L1234...abcd    # Mainnet compressed
+node wallet-creation/import-from-wif.js 51234...abcd    # Mainnet uncompressed  
+node wallet-creation/import-from-wif.js c1234...abcd    # Testnet compressed
+node wallet-creation/import-from-wif.js 1234567890abcdef...  # Hex private key
 ```
 
 ### 💰 Wallet Information (`wallet-info/`)
@@ -146,6 +148,7 @@ node advanced/get-xec-price.js
 |---------|-------------|--------------|
 | `derive-addresses.js` | Generate multiple addresses | HD wallet (mnemonic) |
 | `validate-address.js` | Validate XEC address format | None |
+| `export-to-wif.js` | Export private key to WIF format | Existing wallet |
 
 **Usage:**
 ```bash
@@ -154,6 +157,9 @@ node key-management/derive-addresses.js 10
 
 # Validate address format
 node key-management/validate-address.js ecash:qp1234...abc
+
+# Export private key to WIF (all formats)
+node key-management/export-to-wif.js
 ```
 
 ### 🛠️ Utilities (`utils/`)
