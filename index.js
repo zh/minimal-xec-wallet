@@ -13,7 +13,6 @@ const crypto = require('crypto-js')
 // Local libraries
 const SendXEC = require('./lib/send-xec')
 const Utxos = require('./lib/utxos')
-const Tokens = require('./lib/tokens')
 const AdapterRouter = require('./lib/adapters/router')
 const OpReturn = require('./lib/op-return')
 const ConsolidateUtxos = require('./lib/consolidate-utxos.js')
@@ -72,7 +71,6 @@ class MinimalXECWallet {
     // Instantiate local libraries
     this.sendXecLib = new SendXEC(chronikOptions)
     this.utxos = new Utxos(chronikOptions)
-    this.tokens = new Tokens(chronikOptions)
     this.opReturn = new OpReturn(chronikOptions)
     this.consolidateUtxos = new ConsolidateUtxos(this)
     this.hybridTokens = new HybridTokenManager(chronikOptions)

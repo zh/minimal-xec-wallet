@@ -259,12 +259,15 @@ describe('#SLPTokenHandler', () => {
     })
 
     it('should handle insufficient XEC for fees', async () => {
-      // Use UTXOs with very low XEC amount
+      // Use UTXOs with very low XEC amount - even combined should be insufficient
       const lowXecUtxos = [
-        tokenMocks.flctTokenUtxo, // Has tokens but only dust
+        {
+          ...tokenMocks.flctTokenUtxo,
+          sats: 200 // Very low for token UTXO
+        },
         {
           ...tokenMocks.xecOnlyUtxo,
-          sats: 100 // Very low amount, insufficient for fees
+          sats: 50 // Very low amount, total 250 sats insufficient for fees
         }
       ]
 
@@ -327,7 +330,7 @@ describe('#SLPTokenHandler', () => {
       assert.isArray(result.xecUtxos)
 
       assert.equal(result.slpUtxos.length, 1)
-      assert.equal(result.xecUtxos.length, 1)
+      assert.equal(result.xecUtxos.length, 2) // 1 pure XEC + 1 other token UTXO
 
       // Verify SLP UTXO has correct token ID
       assert.equal(result.slpUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)
