@@ -47,9 +47,19 @@ async function getUtxos () {
     const confirmedUtxos = utxos.filter(utxo => utxo.blockHeight !== -1)
     const unconfirmedUtxos = utxos.filter(utxo => utxo.blockHeight === -1)
 
-    // Calculate totals
-    const totalConfirmed = confirmedUtxos.reduce((sum, utxo) => sum + utxo.value, 0)
-    const totalUnconfirmed = unconfirmedUtxos.reduce((sum, utxo) => sum + utxo.value, 0)
+    // Calculate totals - handle sats field properly
+    const getUtxoValue = (utxo) => {
+      if (utxo.sats !== undefined) {
+        return typeof utxo.sats === 'bigint' ? Number(utxo.sats) : parseInt(utxo.sats)
+      }
+      if (utxo.value !== undefined) {
+        return typeof utxo.value === 'bigint' ? Number(utxo.value) : parseInt(utxo.value)
+      }
+      return 0
+    }
+
+    const totalConfirmed = confirmedUtxos.reduce((sum, utxo) => sum + getUtxoValue(utxo), 0)
+    const totalUnconfirmed = unconfirmedUtxos.reduce((sum, utxo) => sum + getUtxoValue(utxo), 0)
     const totalValue = totalConfirmed + totalUnconfirmed
 
     console.log('\n💰 Balance Summary:')
@@ -62,7 +72,8 @@ async function getUtxos () {
       console.log('\n✅ Confirmed UTXOs:')
       console.log('─'.repeat(70))
       confirmedUtxos.forEach((utxo, index) => {
-        const xecValue = (utxo.value / 100).toLocaleString()
+        const satsValue = typeof utxo.sats === 'bigint' ? Number(utxo.sats) : parseInt(utxo.sats)
+        const xecValue = (satsValue / 100).toLocaleString()
         const txidShort = `${utxo.outpoint.txid.substring(0, 8)}...${utxo.outpoint.txid.substring(56)}`
         console.log(`${index + 1}. ${xecValue} XEC`)
         console.log(`   TXID: ${txidShort}:${utxo.outpoint.outIdx}`)
@@ -77,7 +88,8 @@ async function getUtxos () {
       console.log('⏳ Unconfirmed UTXOs:')
       console.log('─'.repeat(70))
       unconfirmedUtxos.forEach((utxo, index) => {
-        const xecValue = (utxo.value / 100).toLocaleString()
+        const satsValue = typeof utxo.sats === 'bigint' ? Number(utxo.sats) : parseInt(utxo.sats)
+        const xecValue = (satsValue / 100).toLocaleString()
         const txidShort = `${utxo.outpoint.txid.substring(0, 8)}...${utxo.outpoint.txid.substring(56)}`
         console.log(`${index + 1}. ${xecValue} XEC (pending confirmation)`)
         console.log(`   TXID: ${txidShort}:${utxo.outpoint.outIdx}`)
@@ -91,7 +103,7 @@ async function getUtxos () {
     console.log('─'.repeat(70))
 
     if (confirmedUtxos.length > 0) {
-      const values = confirmedUtxos.map(utxo => utxo.value / 100)
+      const values = confirmedUtxos.map(utxo => getUtxoValue(utxo) / 100)
       const avgValue = values.reduce((a, b) => a + b, 0) / values.length
       const maxValue = Math.max(...values)
       const minValue = Math.min(...values)

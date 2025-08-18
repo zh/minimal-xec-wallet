@@ -367,7 +367,7 @@ describe('#ALPTokenHandler', () => {
       assert.isArray(result.xecUtxos)
 
       assert.equal(result.alpUtxos.length, 1)
-      assert.equal(result.xecUtxos.length, 2) // 1 pure XEC + 1 other token UTXO
+      assert.equal(result.xecUtxos.length, 1) // Only pure XEC UTXOs to prevent token burns
 
       // Verify ALP UTXO has correct token ID
       assert.equal(result.alpUtxos[0].token.tokenId, tokenMocks.TGR_TOKEN_ID)

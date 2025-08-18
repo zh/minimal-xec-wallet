@@ -330,7 +330,7 @@ describe('#SLPTokenHandler', () => {
       assert.isArray(result.xecUtxos)
 
       assert.equal(result.slpUtxos.length, 1)
-      assert.equal(result.xecUtxos.length, 2) // 1 pure XEC + 1 other token UTXO
+      assert.equal(result.xecUtxos.length, 1) // Only pure XEC UTXOs to prevent token burns
 
       // Verify SLP UTXO has correct token ID
       assert.equal(result.slpUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)

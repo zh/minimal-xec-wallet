@@ -555,11 +555,14 @@ class MinimalXECWallet {
         await this.initialize()
       }
 
-      // Filter out token UTXOs for regular XEC transactions to prevent token burning
-      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => {
-        // Only include UTXOs that don't have token data
-        return !utxo.token
-      })
+      // Get XEC UTXOs - prefer non-token UTXOs to prevent accidental token burning
+      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => !utxo.token)
+
+      // If no pure XEC UTXOs available, provide helpful error
+      if (xecOnlyUtxos.length === 0) {
+        const tokenUtxoCount = this.utxos.utxoStore.xecUtxos.filter(utxo => utxo.token).length
+        throw new Error(`No pure XEC UTXOs available for transaction. All ${tokenUtxoCount} UTXOs contain tokens. To send XEC, first run wallet.optimize() to consolidate UTXOs and create pure XEC UTXOs, or use sendETokens() if you want to send tokens instead.`)
+      }
 
       return await this.sendXecLib.sendXec(
         outputs,
@@ -658,11 +661,14 @@ class MinimalXECWallet {
         await this.initialize()
       }
 
-      // Filter out token UTXOs for OP_RETURN transactions to prevent token burning
-      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => {
-        // Only include UTXOs that don't have token data
-        return !utxo.token
-      })
+      // Get XEC UTXOs for OP_RETURN - prefer non-token UTXOs to prevent accidental token burning
+      const xecOnlyUtxos = this.utxos.utxoStore.xecUtxos.filter(utxo => !utxo.token)
+
+      // If no pure XEC UTXOs available, provide helpful error
+      if (xecOnlyUtxos.length === 0) {
+        const tokenUtxoCount = this.utxos.utxoStore.xecUtxos.filter(utxo => utxo.token).length
+        throw new Error(`No pure XEC UTXOs available for OP_RETURN transaction. All ${tokenUtxoCount} UTXOs contain tokens. To send OP_RETURN, first run wallet.optimize() to consolidate UTXOs and create pure XEC UTXOs.`)
+      }
 
       return await this.opReturn.sendOpReturn(
         this.walletInfo,

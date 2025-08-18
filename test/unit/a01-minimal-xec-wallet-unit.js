@@ -294,6 +294,11 @@ describe('#index.js - Minimal XEC Wallet', () => {
       sandbox.stub(uut.utxos, 'initUtxoStore').resolves(true)
       uut.isInitialized = true
 
+      // Mock the UTXO store with non-token UTXOs
+      uut.utxos.utxoStore = {
+        xecUtxos: mockUtxos.simpleXecUtxos.utxos
+      }
+
       sandbox.stub(uut.sendXecLib, 'sendXec').resolves(expectedTxid)
 
       const result = await uut.sendXec(outputs)

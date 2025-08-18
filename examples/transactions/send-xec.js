@@ -118,7 +118,7 @@ async function sendXec () {
     // Prepare the output
     const outputs = [{
       address: recipientAddress,
-      amountSat: Math.round(amountXec * 100) // Convert XEC to satoshis
+      amountSat: Math.round(amountXec * 100) // Convert XEC to satoshis (1 XEC = 100 satoshis for eCash)
     }]
 
     // Debug UTXO structure before sending
