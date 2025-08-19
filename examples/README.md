@@ -7,7 +7,7 @@ This directory contains comprehensive examples demonstrating how to use the mini
 ```
 examples/
 ├── wallet-creation/          # Create, restore, import wallets
-├── wallet-info/             # Check balance, UTXOs, transactions  
+├── wallet-info/             # Check balance, UTXOs, transactions
 ├── transactions/            # Send XEC, multi-output, send-all
 ├── advanced/                # OP_RETURN, optimization, price checking
 ├── key-management/          # Address derivation, validation
@@ -81,7 +81,7 @@ node wallet-creation/restore-from-mnemonic.js word1 word2 ... word12
 
 # Import from private key (supports all WIF formats)
 node wallet-creation/import-from-wif.js L1234...abcd    # Mainnet compressed
-node wallet-creation/import-from-wif.js 51234...abcd    # Mainnet uncompressed  
+node wallet-creation/import-from-wif.js 51234...abcd    # Mainnet uncompressed
 node wallet-creation/import-from-wif.js c1234...abcd    # Testnet compressed
 node wallet-creation/import-from-wif.js 1234567890abcdef...  # Hex private key
 ```
@@ -128,6 +128,7 @@ node transactions/send-all-xec.js ecash:qp1234...abc
 | `send-op-return.js` | Embed data in blockchain | Funded wallet |
 | `optimize-utxos.js` | Consolidate UTXOs for efficiency | Multiple UTXOs |
 | `get-xec-price.js` | Get current XEC/USD price | Internet connection |
+| `browser-compatibility-test.js` | Test browser WebAssembly compatibility | None |
 
 **Usage:**
 ```bash
@@ -140,6 +141,10 @@ node advanced/optimize-utxos.js
 
 # Get current XEC price
 node advanced/get-xec-price.js
+
+# Test browser compatibility (WebAssembly support)
+node advanced/browser-compatibility-test.js
+open browser-test.html  # Interactive browser test
 ```
 
 ### 🔐 Key Management (`key-management/`)
@@ -217,7 +222,7 @@ node test-examples.js
 **Test Flow:**
 1. **Phase 1: Wallet Creation** - Creates and validates wallet
 2. **Funding Break** - Shows QR code, waits for funding
-3. **Phase 2: Utilities** - Tests non-transaction features  
+3. **Phase 2: Utilities** - Tests non-transaction features
 4. **Phase 3: Transactions** - Tests real XEC transactions (with confirmation)
 5. **Phase 4: Token Operations** - Tests SLP/ALP token functionality
 
@@ -363,7 +368,7 @@ New Balance: 899.99 XEC
 After running the examples:
 
 1. **Explore the source code** - Learn how each feature works
-2. **Build your own application** - Use these examples as templates  
+2. **Build your own application** - Use these examples as templates
 3. **Work with eTokens** - SLP and ALP token operations
 4. **Contribute improvements** - Submit PRs for enhancements
 5. **Join the community** - eCash developer channels

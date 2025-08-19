@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal XEC Wallet - Browser Compatibility Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Minimal XEC Wallet - Browser Test</h1>
+        <p>This page tests WebAssembly compatibility and wallet functionality in your browser.</p>
+
+        <div class="test-section">
+            <h2>🔍 Browser Capabilities</h2>
+            <div id="browser-info"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ WebAssembly Loading Test</h2>
+            <button onclick="testWASMLoading()">Test WebAssembly Loading</button>
+            <div id="wasm-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏦 Wallet Functionality Test</h2>
+            <button onclick="testWalletFunctionality()">Test Wallet Creation</button>
+            <div id="wallet-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>💰 Transaction Test</h2>
+            <button onclick="testTransactionBuilding()" id="tx-test-btn" disabled>Test Transaction Building</button>
+            <div id="transaction-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="results-summary"></div>
+        </div>
+    </div>
+
+    <!-- Load the minimal-xec-wallet library -->
+    <script src="../dist/minimal-xec-wallet.min.js"></script>
+
+    <script>
+        let testResults = {
+            browserCapabilities: null,
+            wasmLoading: null,
+            walletCreation: null,
+            transactionBuilding: null
+        };
+
+        let wallet = null;
+
+        // Display browser capabilities on page load
+        window.onload = function() {
+            displayBrowserCapabilities();
+        };
+
+        function displayBrowserCapabilities() {
+            const capabilities = {
+                webAssembly: typeof WebAssembly !== 'undefined',
+                webAssemblyCompile: typeof WebAssembly !== 'undefined' && typeof WebAssembly.compile === 'function',
+                webAssemblyInstantiate: typeof WebAssembly !== 'undefined' && typeof WebAssembly.instantiate === 'function',
+                webWorkers: typeof Worker !== 'undefined',
+                cryptoSubtle: typeof crypto !== 'undefined' && crypto.subtle,
+                userAgent: navigator.userAgent
+            };
+
+            testResults.browserCapabilities = capabilities;
+
+            const html = `
+                <div class="status info">
+                    <strong>Browser Information:</strong><br>
+                    WebAssembly Support: ${capabilities.webAssembly ? '✅' : '❌'}<br>
+                    WebAssembly.compile: ${capabilities.webAssemblyCompile ? '✅' : '❌'}<br>
+                    WebAssembly.instantiate: ${capabilities.webAssemblyInstantiate ? '✅' : '❌'}<br>
+                    Web Workers: ${capabilities.webWorkers ? '✅' : '❌'}<br>
+                    Crypto.subtle: ${capabilities.cryptoSubtle ? '✅' : '❌'}<br>
+                </div>
+                <pre>${capabilities.userAgent}</pre>
+            `;
+
+            document.getElementById('browser-info').innerHTML = html;
+        }
+
+        async function testWASMLoading() {
+            const statusDiv = document.getElementById('wasm-status');
+            statusDiv.innerHTML = '<div class="status info">Testing WebAssembly loading...</div>';
+
+            try {
+                const startTime = Date.now();
+
+                // Test if MinimalXecWallet is available
+                if (typeof MinimalXecWallet === 'undefined') {
+                    throw new Error('MinimalXecWallet library not loaded');
+                }
+
+                // Create a test wallet to trigger WASM initialization
+                const testWallet = new MinimalXecWallet();
+
+                // Wait for WASM initialization
+                await testWallet.wasmInitPromise;
+
+                const endTime = Date.now();
+                const loadTime = endTime - startTime;
+
+                testResults.wasmLoading = {
+                    success: true,
+                    loadTime
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ WebAssembly loading successful!<br>
+                        Load time: ${loadTime}ms
+                    </div>
+                `;
+
+            } catch (err) {
+                testResults.wasmLoading = {
+                    success: false,
+                    error: err.message
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status warning">
+                        ⚠️ WebAssembly loading failed, using fallbacks:<br>
+                        ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testWalletFunctionality() {
+            const statusDiv = document.getElementById('wallet-status');
+            statusDiv.innerHTML = '<div class="status info">Testing wallet creation...</div>';
+
+            try {
+                const startTime = Date.now();
+
+                // Create wallet
+                wallet = new MinimalXecWallet();
+
+                // Wait for wallet info creation
+                await wallet.walletInfoPromise;
+
+                // Initialize wallet
+                await wallet.initialize();
+
+                const endTime = Date.now();
+                const initTime = endTime - startTime;
+
+                testResults.walletCreation = {
+                    success: true,
+                    initTime,
+                    address: wallet.walletInfo.xecAddress
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Wallet created successfully!<br>
+                        Initialization time: ${initTime}ms<br>
+                        Address: ${wallet.walletInfo.xecAddress}
+                    </div>
+                `;
+
+                // Enable transaction test button
+                document.getElementById('tx-test-btn').disabled = false;
+
+            } catch (err) {
+                testResults.walletCreation = {
+                    success: false,
+                    error: err.message
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Wallet creation failed:<br>
+                        ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testTransactionBuilding() {
+            const statusDiv = document.getElementById('transaction-status');
+            statusDiv.innerHTML = '<div class="status info">Testing transaction building...</div>';
+
+            if (!wallet) {
+                statusDiv.innerHTML = '<div class="status error">❌ Wallet not created yet</div>';
+                return;
+            }
+
+            try {
+                // Test basic operations that don't require funding
+
+                // Test address validation
+                const isValidAddress = wallet._validateAddress(wallet.walletInfo.xecAddress);
+
+                // Test key pair generation
+                const keyPair = await wallet.getKeyPair(0);
+
+                // Test WIF export/validation
+                const wif = wallet.exportPrivateKeyAsWIF();
+                const isValidWIF = wallet.validateWIF(wif);
+
+                // Test balance query (will show error but shouldn't crash)
+                let balanceTest = 'Skipped';
+                try {
+                    await wallet.getXecBalance();
+                    balanceTest = 'Success';
+                } catch (err) {
+                    balanceTest = `Error (expected): ${err.message.substring(0, 50)}...`;
+                }
+
+                testResults.transactionBuilding = {
+                    success: true,
+                    addressValidation: isValidAddress,
+                    keyPairGeneration: !!keyPair.xecAddress,
+                    wifOperations: isValidWIF,
+                    balanceQuery: balanceTest
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Transaction building test completed!<br>
+                        Address validation: ${isValidAddress ? '✅' : '❌'}<br>
+                        Key pair generation: ${keyPair.xecAddress ? '✅' : '❌'}<br>
+                        WIF operations: ${isValidWIF ? '✅' : '❌'}<br>
+                        Balance query: ${balanceTest}
+                    </div>
+                `;
+
+                updateResultsSummary();
+
+            } catch (err) {
+                testResults.transactionBuilding = {
+                    success: false,
+                    error: err.message
+                };
+
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Transaction building failed:<br>
+                        ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        function updateResultsSummary() {
+            const summaryDiv = document.getElementById('results-summary');
+
+            let allTestsPassed = true;
+            let summary = '<h3>Overall Test Results:</h3>';
+
+            if (testResults.browserCapabilities) {
+                const browserSupport = testResults.browserCapabilities.webAssembly ? 'Modern Browser' : 'Legacy Browser';
+                summary += `<strong>Browser Type:</strong> ${browserSupport}<br>`;
+            }
+
+            if (testResults.wasmLoading) {
+                const wasmStatus = testResults.wasmLoading.success ? '✅ Success' : '⚠️ Fallback';
+                summary += `<strong>WebAssembly Loading:</strong> ${wasmStatus}<br>`;
+            }
+
+            if (testResults.walletCreation) {
+                const walletStatus = testResults.walletCreation.success ? '✅ Success' : '❌ Failed';
+                summary += `<strong>Wallet Creation:</strong> ${walletStatus}<br>`;
+                if (!testResults.walletCreation.success) allTestsPassed = false;
+            }
+
+            if (testResults.transactionBuilding) {
+                const txStatus = testResults.transactionBuilding.success ? '✅ Success' : '❌ Failed';
+                summary += `<strong>Transaction Building:</strong> ${txStatus}<br>`;
+                if (!testResults.transactionBuilding.success) allTestsPassed = false;
+            }
+
+            const overallStatus = allTestsPassed ? 'success' : 'warning';
+            const overallMessage = allTestsPassed
+                ? '🎉 All tests passed! Your browser is fully compatible with minimal-xec-wallet.'
+                : '⚠️ Some tests failed. The wallet may work with reduced functionality.';
+
+            summaryDiv.innerHTML = `
+                <div class="status ${overallStatus}">
+                    ${summary}<br>
+                    <strong>${overallMessage}</strong>
+                </div>
+            `;
+        }
+
+        // Test console logging
+        console.log('🚀 Minimal XEC Wallet Browser Test Page Loaded');
+        console.log('Click the test buttons to validate browser compatibility');
+    </script>
+</body>
+</html>

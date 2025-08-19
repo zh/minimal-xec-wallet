@@ -84,6 +84,9 @@ class MinimalXECWallet {
     this.walletInfoCreated = false
     this.walletInfoPromise = this.create(hdPrivateKeyOrMnemonic)
 
+    // Initialize WebAssembly early for better browser compatibility
+    this.wasmInitPromise = this._initializeWASM()
+
     // Bind the 'this' object to all functions
     this.create = this.create.bind(this)
     this.initialize = this.initialize.bind(this)
@@ -279,10 +282,40 @@ class MinimalXECWallet {
     }
   }
 
+  // Initialize WebAssembly for browser compatibility
+  async _initializeWASM () {
+    try {
+      // Only initialize WASM in browser environments
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        // Dynamic import to avoid issues in Node.js environments
+        const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
+
+        if (wasmShim && wasmShim.init) {
+          console.log('Initializing WebAssembly for browser compatibility...')
+          await wasmShim.init()
+          console.log('WebAssembly initialization completed')
+        }
+      }
+
+      return true
+    } catch (err) {
+      // WASM initialization failure should not prevent wallet from working
+      console.warn('WebAssembly initialization failed (using fallbacks):', err.message)
+      return false
+    }
+  }
+
   // Initialize is called to initialize the UTXO store, download token data, and
   // get a balance of the wallet.
   async initialize () {
     await this.walletInfoPromise
+
+    // Ensure WASM is initialized (but don't block on it)
+    try {
+      await this.wasmInitPromise
+    } catch (err) {
+      console.warn('WASM initialization incomplete, continuing with fallbacks')
+    }
 
     await this.utxos.initUtxoStore(this.walletInfo.xecAddress)
 

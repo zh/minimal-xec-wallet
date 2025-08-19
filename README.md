@@ -76,9 +76,16 @@ await wallet.sendETokens('tokenId...', [
 <script src="https://unpkg.com/minimal-xec-wallet/dist/minimal-xec-wallet.min.js"></script>
 <script>
   const wallet = new MinimalXecWallet()
-  // Use same API as Node.js
+
+  // Initialize with automatic browser compatibility
+  wallet.initialize().then(() => {
+    console.log('Wallet ready for all browsers!')
+    // Use same API as Node.js
+  })
 </script>
 ```
+
+**Browser Compatibility**: Automatic WebAssembly loading with JavaScript fallbacks for older browsers. See [Browser Compatibility Guide](./docs/BROWSER_COMPATIBILITY.md) for details.
 
 ## 📚 Documentation
 
@@ -86,12 +93,13 @@ await wallet.sendETokens('tokenId...', [
 - **[Complete API Documentation](./WALLET_API.md)** - All methods with examples
 - **[Examples Collection](./examples/README.md)** - 25+ working examples
 - **[Development Docs](./docs/README.md)** - Architecture and implementation details
+- **[Browser Compatibility Guide](./docs/BROWSER_COMPATIBILITY.md)** - WebAssembly and fallback support
 
 ### Quick Links
 - **[Wallet Creation Examples](./examples/wallet-creation/)** - Create, restore, import wallets
 - **[Transaction Examples](./examples/transactions/)** - Send XEC, multi-output, send-all
 - **[Token Examples](./examples/tokens/)** - SLP/ALP token operations
-- **[Advanced Examples](./examples/advanced/)** - OP_RETURN, optimization, price queries
+- **[Advanced Examples](./examples/advanced/)** - OP_RETURN, optimization, price queries, compatibility testing
 
 ## 🧪 Testing
 
@@ -109,6 +117,9 @@ npm run test:integration
 
 # Test coverage report
 npm run test:coverage
+
+# Browser compatibility test
+node examples/advanced/browser-compatibility-test.js
 ```
 
 ### Example Testing
@@ -120,6 +131,9 @@ node examples/test-examples.js
 # Test specific functionality
 node examples/tokens/list-all-tokens.js
 node examples/transactions/send-xec.js
+
+# Test browser compatibility
+node examples/advanced/browser-compatibility-test.js
 ```
 
 ## 🏗️ Architecture
@@ -162,7 +176,7 @@ const wallet = new MinimalXECWallet(mnemonic, {
 # Test mode
 NODE_ENV=test npm test
 
-# Development mode  
+# Development mode
 NODE_ENV=development npm start
 ```
 
@@ -194,7 +208,7 @@ npm run docs
 
 - **424 Unit Tests** - Comprehensive coverage of all features
 - **29 Integration Tests** - Real network validation
-- **25+ Examples** - Working code for all use cases  
+- **25+ Examples** - Working code for all use cases
 - **6 Token Protocols** - SLP Type 1, ALP Standard, auto-detection
 - **7 Chronik Endpoints** - Robust network failover
 
