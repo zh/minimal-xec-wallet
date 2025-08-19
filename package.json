@@ -1,6 +1,6 @@
 {
   "name": "minimal-xec-wallet",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A minimalist eCash (XEC) wallet npm library, for use in web apps. Supports eTokens.",
   "main": "./index.js",
   "module": "./dist/minimal-xec-wallet.min.js",
@@ -51,7 +51,7 @@
     "title": "minimal-xec-wallet",
     "url": "localhost:5000"
   },
-  "repository": "github:minimal-xec-wallet",
+  "repository": "github:zh/minimal-xec-wallet",
   "dependencies": {
     "@chris.troutner/retry-queue-commonjs": "1.0.8",
     "@scure/bip39": "^1.6.0",

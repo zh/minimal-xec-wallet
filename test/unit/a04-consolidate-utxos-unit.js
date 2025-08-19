@@ -73,7 +73,7 @@ describe('ConsolidateUtxos', () => {
       const analysis = await consolidator.analyzeUtxos()
 
       assert.equal(analysis.shouldConsolidate, false, 'Should not consolidate with insufficient UTXOs')
-      assert.include(analysis.reason, 'Not enough UTXOs', 'Reason explains insufficient UTXOs')
+      assert.include(analysis.reason, 'Not enough pure XEC UTXOs', 'Reason explains insufficient UTXOs')
       assert.equal(analysis.totalUtxos, 2, 'Reports correct UTXO count')
     })
 
@@ -92,7 +92,7 @@ describe('ConsolidateUtxos', () => {
       const analysis = await consolidator.analyzeUtxos({ consolidationThreshold: 100000 })
 
       assert.equal(analysis.shouldConsolidate, false, 'Should not consolidate when no small UTXOs')
-      assert.include(analysis.reason, 'Not enough small UTXOs', 'Reason explains insufficient small UTXOs')
+      assert.include(analysis.reason, 'Not enough small pure XEC UTXOs', 'Reason explains insufficient small UTXOs')
       assert.equal(analysis.smallUtxos, 0, 'Reports zero small UTXOs')
     })
 
@@ -282,7 +282,7 @@ describe('ConsolidateUtxos', () => {
       assert.isTrue(wallet.sendXecLib.sendXec.notCalled, 'Does not execute transactions in dry run')
 
       // Message should either indicate dry run completion or explain why no consolidation
-      const validMessages = ['Dry run completed', 'Not enough UTXOs', 'cost', 'more than current']
+      const validMessages = ['Dry run completed', 'Not enough pure XEC UTXOs', 'cost', 'more than current']
       const hasValidMessage = validMessages.some(msg => result.message.includes(msg))
       assert.isTrue(hasValidMessage, `Message explains result: ${result.message}`)
     })
@@ -309,7 +309,7 @@ describe('ConsolidateUtxos', () => {
       assert.isArray(result.transactions, 'Returns transaction results')
 
       // Message should explain the result appropriately
-      const validMessages = ['Successfully consolidated', 'Not enough UTXOs', 'cost', 'more than current']
+      const validMessages = ['Successfully consolidated', 'Not enough pure XEC UTXOs', 'cost', 'more than current']
       const hasValidMessage = validMessages.some(msg => result.message.includes(msg))
       assert.isTrue(hasValidMessage, `Message explains result: ${result.message}`)
 
@@ -330,7 +330,7 @@ describe('ConsolidateUtxos', () => {
       const result = await consolidator.start()
 
       assert.equal(result.success, true, 'Succeeds when no consolidation needed')
-      assert.include(result.message, 'Not enough UTXOs', 'Returns appropriate message')
+      assert.include(result.message, 'Not enough pure XEC UTXOs', 'Returns appropriate message')
       assert.equal(result.transactions.length, 0, 'No transactions when no consolidation needed')
     })
   })
