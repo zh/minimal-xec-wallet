@@ -1,0 +1,615 @@
+# Minimal XEC Wallet - API Reference
+
+Complete reference guide for all `@minimal-xec-wallet` library methods, organized by functionality category.
+
+## Table of Contents
+
+- [Wallet Creation & Management](#wallet-creation--management)
+- [Key Management](#key-management)
+- [Balance & UTXO Operations](#balance--utxo-operations)
+- [XEC Transactions](#xec-transactions)
+- [eToken Operations](#etoken-operations)
+- [Advanced Features](#advanced-features)
+- [Utility Methods](#utility-methods)
+- [Network & Validation](#network--validation)
+
+---
+
+## Wallet Creation & Management
+
+### constructor(hdPrivateKeyOrMnemonic, advancedOptions)
+
+Creates a new wallet instance from mnemonic, WIF private key, or generates a new one.
+
+**Parameters:**
+- `hdPrivateKeyOrMnemonic` (string, optional) - 12-word mnemonic, WIF private key, or hex private key. If omitted, generates new random mnemonic
+- `advancedOptions` (object, optional) - Configuration options
+
+**Advanced Options:**
+- `hdPath` (string) - HD derivation path (default: "m/44'/899'/0'/0/0")
+- `chronikUrls` (array) - Array of Chronik endpoints for API calls
+- `fee` (number) - Transaction fee rate in sats/byte (default: 1.2)
+- `password` (string) - Password for encrypting/decrypting mnemonic
+- `enableDonations` (boolean) - Enable donation outputs (default: false)
+
+**Example:**
+```javascript
+// Generate new wallet
+const wallet = new MinimalXECWallet()
+
+// Restore from mnemonic
+const wallet = new MinimalXECWallet('abandon abandon abandon...')
+
+// Import from WIF
+const wallet = new MinimalXECWallet('L1234567890abcdef...')
+
+// With options
+const wallet = new MinimalXECWallet(mnemonic, { 
+  fee: 2.0, 
+  enableDonations: false 
+})
+```
+
+### async create(mnemonicOrWif)
+
+Internal method that creates wallet info from input. Returns wallet details object.
+
+**Parameters:**
+- `mnemonicOrWif` (string, optional) - Same as constructor parameter
+
+**Returns:** `Object` containing wallet information:
+- `mnemonic` - 12-word recovery phrase
+- `privateKey` - Private key in hex format
+- `publicKey` - Public key
+- `xecAddress` - eCash address (ecash: format)
+- `hdPath` - HD derivation path
+
+### async initialize()
+
+Initializes the wallet by loading UTXOs and token data. Must be called before transactions.
+
+**Returns:** `boolean` - True when initialization is complete
+
+**Example:**
+```javascript
+const wallet = new MinimalXECWallet()
+await wallet.initialize()
+```
+
+### encrypt(mnemonic, password)
+
+Encrypts a mnemonic phrase using AES-256-CBC with PBKDF2 key derivation.
+
+**Parameters:**
+- `mnemonic` (string) - 12-word mnemonic to encrypt
+- `password` (string) - Password for encryption (minimum 8 characters)
+
+**Returns:** `string` - Encrypted mnemonic as JSON string
+
+**Example:**
+```javascript
+const encrypted = wallet.encrypt(mnemonic, 'securePassword123')
+```
+
+### decrypt(mnemonicEncrypted, password)
+
+Decrypts an encrypted mnemonic phrase. Supports both new and legacy formats.
+
+**Parameters:**
+- `mnemonicEncrypted` (string) - Encrypted mnemonic JSON string
+- `password` (string) - Password for decryption
+
+**Returns:** `string` - Decrypted mnemonic phrase
+
+**Example:**
+```javascript
+const mnemonic = wallet.decrypt(encryptedData, 'securePassword123')
+```
+
+---
+
+## Key Management
+
+### async getKeyPair(hdIndex)
+
+Generates a key pair for a specific HD wallet index.
+
+**Parameters:**
+- `hdIndex` (number, optional) - HD index for key derivation (default: 0)
+
+**Returns:** `Object` containing:
+- `hdIndex` - The HD index used
+- `wif` - Private key in WIF format
+- `publicKey` - Public key
+- `xecAddress` - eCash address for this key pair
+
+**Example:**
+```javascript
+// Get key pair for index 5
+const keyPair = await wallet.getKeyPair(5)
+console.log(keyPair.xecAddress) // ecash:qr...
+```
+
+### exportPrivateKeyAsWIF(compressed, testnet)
+
+Exports the wallet's private key in WIF (Wallet Import Format).
+
+**Parameters:**
+- `compressed` (boolean, optional) - Use compressed format (default: true)
+- `testnet` (boolean, optional) - Export for testnet (default: false)
+
+**Returns:** `string` - Private key in WIF format
+
+**Example:**
+```javascript
+// Export compressed mainnet WIF
+const wif = wallet.exportPrivateKeyAsWIF()
+
+// Export uncompressed testnet WIF
+const wif = wallet.exportPrivateKeyAsWIF(false, true)
+```
+
+### validateWIF(wif)
+
+Validates if a string is a valid WIF private key format.
+
+**Parameters:**
+- `wif` (string) - WIF string to validate
+
+**Returns:** `boolean` - True if valid WIF format
+
+**Example:**
+```javascript
+const isValid = wallet.validateWIF('L1234567890abcdef...')
+```
+
+---
+
+## Balance & UTXO Operations
+
+### async getXecBalance(inObj)
+
+Gets the total XEC balance for an address or the wallet's address.
+
+**Parameters:**
+- `inObj` (string|object, optional) - XEC address string or object with `xecAddress` property
+
+**Returns:** `number` - Balance in XEC (confirmed + unconfirmed)
+
+**Example:**
+```javascript
+// Get wallet balance
+const balance = await wallet.getXecBalance()
+
+// Get balance for specific address
+const balance = await wallet.getXecBalance('ecash:qp123...')
+const balance = await wallet.getXecBalance({ xecAddress: 'ecash:qp123...' })
+```
+
+### async getDetailedBalance(inObj)
+
+Gets detailed balance information including confirmed and unconfirmed amounts.
+
+**Parameters:**
+- `inObj` (string|object, optional) - XEC address string or object with `xecAddress` property
+
+**Returns:** `Object` containing:
+- `confirmed` - Confirmed balance in XEC
+- `unconfirmed` - Unconfirmed balance in XEC
+- `total` - Total balance in XEC
+- `satoshis` - Balance amounts in satoshis
+
+**Example:**
+```javascript
+const balance = await wallet.getDetailedBalance()
+console.log(`Confirmed: ${balance.confirmed} XEC`)
+console.log(`Unconfirmed: ${balance.unconfirmed} XEC`)
+console.log(`Total: ${balance.total} XEC`)
+```
+
+### async getUtxos(xecAddress)
+
+Gets all UTXOs (Unspent Transaction Outputs) for an address.
+
+**Parameters:**
+- `xecAddress` (string, optional) - XEC address (uses wallet address if omitted)
+
+**Returns:** `Array` - Array of UTXO objects with transaction data
+
+**Example:**
+```javascript
+const utxos = await wallet.getUtxos()
+console.log(`Found ${utxos.length} UTXOs`)
+```
+
+### async optimize(dryRun)
+
+Optimizes wallet performance by consolidating small UTXOs into larger ones.
+
+**Parameters:**
+- `dryRun` (boolean, optional) - Preview optimization without executing (default: false)
+
+**Returns:** `Object` - Optimization results and transaction details
+
+**Example:**
+```javascript
+// Preview optimization
+const preview = await wallet.optimize(true)
+
+// Execute optimization
+const result = await wallet.optimize()
+```
+
+---
+
+## XEC Transactions
+
+### async sendXec(outputs)
+
+Sends XEC to one or multiple recipients.
+
+**Parameters:**
+- `outputs` (array) - Array of output objects with `address` and `amountSats` properties
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+// Send to single recipient
+const txid = await wallet.sendXec([
+  { address: 'ecash:qp123...', amountSats: 10000 } // 100 XEC
+])
+
+// Send to multiple recipients
+const txid = await wallet.sendXec([
+  { address: 'ecash:qp123...', amountSats: 5000 },  // 50 XEC
+  { address: 'ecash:qr456...', amountSats: 3000 }   // 30 XEC
+])
+```
+
+### async sendAllXec(toAddress)
+
+Sends all available XEC to a single address (empties the wallet).
+
+**Parameters:**
+- `toAddress` (string) - Recipient XEC address
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+const txid = await wallet.sendAllXec('ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy')
+```
+
+### async sendOpReturn(msg, prefix, xecOutput, satsPerByte)
+
+Sends an OP_RETURN transaction to embed data in the blockchain.
+
+**Parameters:**
+- `msg` (string, optional) - Message to embed (default: '')
+- `prefix` (string, optional) - Hex prefix for the message (default: '6d02')
+- `xecOutput` (array, optional) - Additional XEC outputs (default: [])
+- `satsPerByte` (number, optional) - Fee rate (default: 1.0)
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+// Simple message
+const txid = await wallet.sendOpReturn('Hello XEC blockchain!')
+
+// With custom prefix and outputs
+const txid = await wallet.sendOpReturn(
+  'Custom message',
+  '6d03',
+  [{ address: 'ecash:qp123...', amountSats: 1000 }],
+  2.0
+)
+```
+
+---
+
+## eToken Operations
+
+### async listETokens(xecAddress)
+
+Lists all eTokens (SLP/ALP tokens) held by an address.
+
+**Parameters:**
+- `xecAddress` (string, optional) - XEC address (uses wallet address if omitted)
+
+**Returns:** `Array` - Array of token objects with balances and metadata
+
+**Example:**
+```javascript
+const tokens = await wallet.listETokens()
+tokens.forEach(token => {
+  console.log(`${token.name}: ${token.balance}`)
+})
+```
+
+### async getETokenBalance(inObj)
+
+Gets the balance of a specific eToken.
+
+**Parameters:**
+- `inObj` (object) - Object containing:
+  - `tokenId` (string) - Token ID to check
+  - `xecAddress` (string, optional) - Address to check
+
+**Returns:** `number` - Token balance
+
+**Example:**
+```javascript
+const balance = await wallet.getETokenBalance({
+  tokenId: 'abc123def456...',
+  xecAddress: 'ecash:qp123...' // optional
+})
+```
+
+### async getETokenData(tokenId, withTxHistory, sortOrder)
+
+Gets comprehensive data about an eToken including metadata and transaction history.
+
+**Parameters:**
+- `tokenId` (string) - Token ID
+- `withTxHistory` (boolean, optional) - Include transaction history (default: false)
+- `sortOrder` (string, optional) - Sort order for transactions (default: 'DESCENDING')
+
+**Returns:** `Object` - Token data including metadata, supply, and optional transaction history
+
+**Example:**
+```javascript
+// Basic token data
+const tokenData = await wallet.getETokenData('abc123def456...')
+
+// With transaction history
+const tokenData = await wallet.getETokenData('abc123def456...', true)
+```
+
+### async sendETokens(tokenId, outputs, satsPerByte)
+
+Sends eTokens to one or multiple recipients.
+
+**Parameters:**
+- `tokenId` (string) - Token ID to send
+- `outputs` (array) - Array of output objects with `address` and `amount` properties
+- `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+const txid = await wallet.sendETokens('abc123def456...', [
+  { address: 'ecash:qp123...', amount: 100 },
+  { address: 'ecash:qr456...', amount: 50 }
+])
+```
+
+### async burnETokens(tokenId, amount, satsPerByte)
+
+Burns a specific amount of eTokens (permanently destroys them).
+
+**Parameters:**
+- `tokenId` (string) - Token ID to burn
+- `amount` (number) - Amount of tokens to burn
+- `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+const txid = await wallet.burnETokens('abc123def456...', 100)
+```
+
+### async burnAllETokens(tokenId, satsPerByte)
+
+Burns all available eTokens of a specific type.
+
+**Parameters:**
+- `tokenId` (string) - Token ID to burn
+- `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+const txid = await wallet.burnAllETokens('abc123def456...')
+```
+
+---
+
+## Advanced Features
+
+### async getTransactions(xecAddress, sortingOrder)
+
+Gets transaction history for an address.
+
+**Parameters:**
+- `xecAddress` (string, optional) - XEC address (uses wallet address if omitted)
+- `sortingOrder` (string, optional) - Sort order: 'ASCENDING' or 'DESCENDING' (default: 'DESCENDING')
+
+**Returns:** `Array` - Array of transaction objects
+
+**Example:**
+```javascript
+// Get recent transactions
+const txs = await wallet.getTransactions()
+
+// Get oldest transactions first
+const txs = await wallet.getTransactions(null, 'ASCENDING')
+```
+
+### async getTxData(txids)
+
+Gets detailed data for up to 20 specific transaction IDs.
+
+**Parameters:**
+- `txids` (array) - Array of transaction IDs to fetch
+
+**Returns:** `Array` - Array of transaction data objects
+
+**Example:**
+```javascript
+const txData = await wallet.getTxData(['abc123...', 'def456...'])
+```
+
+### async getXecUsd()
+
+Gets the current XEC price in USD.
+
+**Returns:** `number` - Current XEC price in USD
+
+**Example:**
+```javascript
+const price = await wallet.getXecUsd()
+console.log(`Current XEC price: $${price} USD`)
+```
+
+### async getPubKey(addr)
+
+Gets the public key for an address (if available from transaction history).
+
+**Parameters:**
+- `addr` (string) - XEC address
+
+**Returns:** `string` - Public key in hex format
+
+**Example:**
+```javascript
+const pubKey = await wallet.getPubKey('ecash:qp123...')
+```
+
+---
+
+## Utility Methods
+
+### async broadcast(inObj)
+
+Broadcasts a raw transaction hex to the network.
+
+**Parameters:**
+- `inObj` (object) - Object containing:
+  - `hex` (string) - Raw transaction hex
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+```javascript
+const txid = await wallet.broadcast({ hex: '0100000001...' })
+```
+
+### async utxoIsValid(utxo)
+
+Validates if a UTXO is still spendable (not already spent).
+
+**Parameters:**
+- `utxo` (object) - UTXO object to validate
+
+**Returns:** `boolean` - True if UTXO is still valid
+
+**Example:**
+```javascript
+const isValid = await wallet.utxoIsValid(utxo)
+```
+
+### async cid2json(inObj)
+
+Converts a CID (Content Identifier) to JSON format.
+
+**Parameters:**
+- `inObj` (object) - Object containing CID data
+
+**Returns:** `Object` - JSON representation of CID content
+
+**Example:**
+```javascript
+const json = await wallet.cid2json({ cid: 'Qm...' })
+```
+
+---
+
+## Network & Validation
+
+### _validateAddress(address)
+
+Internal method to validate XEC address format.
+
+**Parameters:**
+- `address` (string) - Address to validate
+
+**Returns:** `boolean` - True if valid address format
+
+**Throws:** Error if address is invalid
+
+**Example:**
+```javascript
+// This is an internal method, but address validation happens automatically
+// in all methods that accept addresses
+```
+
+### _sanitizeError(error, context)
+
+Internal method to sanitize error messages and remove sensitive information.
+
+**Parameters:**
+- `error` (Error) - Original error object
+- `context` (string) - Context for the error
+
+**Returns:** `Error` - Sanitized error object
+
+---
+
+## Error Handling
+
+All methods throw descriptive errors for common issues:
+
+- **Invalid addresses** - Address format validation
+- **Insufficient funds** - Not enough XEC or tokens for transaction
+- **Network errors** - Connection issues with Chronik indexer
+- **Invalid parameters** - Missing or malformed input parameters
+- **Wallet not initialized** - Need to call `initialize()` first
+
+**Example Error Handling:**
+```javascript
+try {
+  const txid = await wallet.sendXec([
+    { address: 'invalid-address', amountSats: 1000 }
+  ])
+} catch (error) {
+  console.error('Transaction failed:', error.message)
+  // Error messages are sanitized and safe to display
+}
+```
+
+---
+
+## Configuration
+
+### Default Settings
+
+- **HD Path:** `m/44'/899'/0'/0/0` (XEC coin type 899)
+- **Fee Rate:** 1.2 sats/byte
+- **Dust Limit:** 546 satoshis (5.46 XEC)
+- **Chronik Endpoints:** Multiple fallback endpoints for reliability
+- **Donations:** Disabled by default for privacy
+
+### Environment Variables
+
+- `NODE_ENV=test` - Enables test mode features
+- `TEST=unit` - Enables unit test mode
+
+---
+
+## Examples
+
+See the `/examples` directory for complete working examples of all API methods:
+
+- **Wallet Creation:** `/examples/wallet-creation/`
+- **Transactions:** `/examples/transactions/`
+- **Token Operations:** `/examples/tokens/`
+- **Key Management:** `/examples/key-management/`
+- **Advanced Features:** `/examples/advanced/`
+- **Utilities:** `/examples/utils/`
+
+Each example includes detailed usage instructions and error handling patterns.
