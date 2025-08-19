@@ -1,6 +1,6 @@
 {
   "name": "minimal-xec-wallet",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A minimalist eCash (XEC) wallet npm library, for use in web apps. Supports eTokens.",
   "main": "./index.js",
   "module": "./dist/minimal-xec-wallet.min.js",
