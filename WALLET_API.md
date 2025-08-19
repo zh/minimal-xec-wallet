@@ -311,39 +311,62 @@ const txid = await wallet.sendOpReturn(
 
 ## eToken Operations
 
+The wallet provides full support for both SLP (Simple Ledger Protocol) and ALP (A Ledger Protocol) tokens with automatic protocol detection.
+
 ### async listETokens(xecAddress)
 
-Lists all eTokens (SLP/ALP tokens) held by an address.
+Lists all eTokens (SLP/ALP tokens) held by an address with automatic protocol detection.
 
 **Parameters:**
 - `xecAddress` (string, optional) - XEC address (uses wallet address if omitted)
 
 **Returns:** `Array` - Array of token objects with balances and metadata
 
+**Token Object Properties:**
+- `tokenId` - Unique token identifier
+- `ticker` - Token symbol/ticker
+- `name` - Full token name  
+- `decimals` - Decimal places for display
+- `balance` - Token balance (formatted with decimals)
+- `balanceString` - Human-readable balance
+- `protocol` - 'SLP' or 'ALP'
+- `utxos` - Array of UTXOs containing this token
+
 **Example:**
 ```javascript
 const tokens = await wallet.listETokens()
 tokens.forEach(token => {
-  console.log(`${token.name}: ${token.balance}`)
+  console.log(`${token.ticker} (${token.protocol}): ${token.balance}`)
 })
+
+// Example output:
+// FLCT (SLP): 10
+// TGR (ALP): 10
 ```
 
 ### async getETokenBalance(inObj)
 
-Gets the balance of a specific eToken.
+Gets the balance of a specific eToken with automatic protocol detection.
 
 **Parameters:**
 - `inObj` (object) - Object containing:
   - `tokenId` (string) - Token ID to check
-  - `xecAddress` (string, optional) - Address to check
+  - `xecAddress` (string, optional) - Address to check (uses wallet address if omitted)
 
-**Returns:** `number` - Token balance
+**Returns:** `number` - Token balance (formatted with proper decimals)
 
 **Example:**
 ```javascript
+// Get balance for specific token
+const balance = await wallet.getETokenBalance({
+  tokenId: '5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135'
+})
+console.log(`FLCT Balance: ${balance}`)
+
+// Get balance for token at specific address
 const balance = await wallet.getETokenBalance({
   tokenId: 'abc123def456...',
-  xecAddress: 'ecash:qp123...' // optional
+  xecAddress: 'ecash:qp123...'
 })
 ```
 
@@ -369,7 +392,7 @@ const tokenData = await wallet.getETokenData('abc123def456...', true)
 
 ### async sendETokens(tokenId, outputs, satsPerByte)
 
-Sends eTokens to one or multiple recipients.
+Sends eTokens to one or multiple recipients with automatic SLP/ALP protocol detection.
 
 **Parameters:**
 - `tokenId` (string) - Token ID to send
@@ -378,33 +401,47 @@ Sends eTokens to one or multiple recipients.
 
 **Returns:** `string` - Transaction ID (TXID)
 
+**Output Object Properties:**
+- `address` - Recipient XEC address (ecash: format)
+- `amount` - Token amount to send (in display units, not atoms)
+
 **Example:**
 ```javascript
-const txid = await wallet.sendETokens('abc123def456...', [
-  { address: 'ecash:qp123...', amount: 100 },
-  { address: 'ecash:qr456...', amount: 50 }
+// Send SLP or ALP tokens (protocol auto-detected)
+const txid = await wallet.sendETokens('5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135', [
+  { address: 'ecash:qp123...', amount: 5 },   // Send 5 FLCT
+  { address: 'ecash:qr456...', amount: 3 }    // Send 3 FLCT
+])
+
+// Send ALP tokens (same API)
+const txid = await wallet.sendETokens('6887ab3749e0d5168a04838216895c95fce61f99237626b08d50db804fcb1801', [
+  { address: 'ecash:qp123...', amount: 2 }    // Send 2 TGR
 ])
 ```
 
 ### async burnETokens(tokenId, amount, satsPerByte)
 
-Burns a specific amount of eTokens (permanently destroys them).
+Burns a specific amount of eTokens (permanently destroys them) with automatic SLP/ALP protocol detection.
 
 **Parameters:**
 - `tokenId` (string) - Token ID to burn
-- `amount` (number) - Amount of tokens to burn
+- `amount` (number) - Amount of tokens to burn (in display units)
 - `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
 
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
 ```javascript
-const txid = await wallet.burnETokens('abc123def456...', 100)
+// Burn 5 FLCT tokens (SLP)
+const txid = await wallet.burnETokens('5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135', 5)
+
+// Burn 2 TGR tokens (ALP) 
+const txid = await wallet.burnETokens('6887ab3749e0d5168a04838216895c95fce61f99237626b08d50db804fcb1801', 2)
 ```
 
 ### async burnAllETokens(tokenId, satsPerByte)
 
-Burns all available eTokens of a specific type.
+Burns all available eTokens of a specific type with automatic protocol detection.
 
 **Parameters:**
 - `tokenId` (string) - Token ID to burn
@@ -414,6 +451,7 @@ Burns all available eTokens of a specific type.
 
 **Example:**
 ```javascript
+// Burn all tokens of this type
 const txid = await wallet.burnAllETokens('abc123def456...')
 ```
 

@@ -13,10 +13,11 @@ The Minimal XEC Wallet supports both **SLP (Simple Ledger Protocol)** and **ALP 
 node examples/test-examples.js
 ```
 
-This runs all tests including the new **Phase 4: Token Operations** which validates:
+This runs all tests including **Phase 4: Token Operations** which validates:
 - ✅ Token listing (SLP + ALP)
 - ✅ Token metadata retrieval  
 - ✅ Protocol auto-detection
+- ✅ Token send and burn operations
 - ✅ Error handling and validation
 - ✅ UTXO consolidation with tokens
 - ✅ Infrastructure integration

@@ -162,6 +162,35 @@ node key-management/validate-address.js ecash:qp1234...abc
 node key-management/export-to-wif.js
 ```
 
+### 🪙 Token Operations (`tokens/`)
+
+| Example | Description | Requirements |
+|---------|-------------|--------------|
+| `list-all-tokens.js` | List all SLP and ALP tokens in wallet | Wallet with tokens |
+| `get-token-balance.js` | Get balance for specific token ID | Token ID |
+| `get-token-info.js` | Get comprehensive token metadata | Token ID |
+| `send-any-token.js` | Send SLP or ALP tokens to recipients | Funded wallet, tokens |
+| `burn-tokens.js` | Burn specific amount of tokens | Tokens to burn |
+| `test-main-wallet-integration.js` | Integration test for token API | Test tokens |
+
+**Usage:**
+```bash
+# List all tokens (auto-detects SLP and ALP)
+node tokens/list-all-tokens.js
+
+# Get balance for specific token
+node tokens/get-token-balance.js abc123def456...
+
+# Send tokens (works with both SLP and ALP)
+node tokens/send-any-token.js tokenId recipientAddress amount
+
+# Get token information
+node tokens/get-token-info.js abc123def456...
+
+# Burn tokens permanently
+node tokens/burn-tokens.js tokenId amount
+```
+
 ### 🛠️ Utilities (`utils/`)
 
 | Utility | Description | Requirements |
@@ -190,6 +219,7 @@ node test-examples.js
 2. **Funding Break** - Shows QR code, waits for funding
 3. **Phase 2: Utilities** - Tests non-transaction features  
 4. **Phase 3: Transactions** - Tests real XEC transactions (with confirmation)
+5. **Phase 4: Token Operations** - Tests SLP/ALP token functionality
 
 ### Manual Testing
 
@@ -334,7 +364,7 @@ After running the examples:
 
 1. **Explore the source code** - Learn how each feature works
 2. **Build your own application** - Use these examples as templates  
-3. **Implement eTokens** - Phase 2 features (coming soon)
+3. **Work with eTokens** - SLP and ALP token operations
 4. **Contribute improvements** - Submit PRs for enhancements
 5. **Join the community** - eCash developer channels
 
