@@ -278,7 +278,7 @@ node transactions/send-xec.js ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy 1
 - **Gate.io**: XEC/USDT
 
 ### Development
-- **Library Source**: https://github.com/your-repo/minimal-xec-wallet
+- **Library Source**: https://github.com/zh/minimal-xec-wallet
 - **API Documentation**: ../docs/
 - **Test Coverage**: Run `npm test`
 
