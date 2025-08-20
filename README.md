@@ -215,15 +215,14 @@ npm run docs
 ## 🔗 Resources
 
 ### eCash Ecosystem
-- **[eCash.org](https://e.cash)** - Official eCash website
+- **[eCash](https://e.cash)** - Official eCash website
 - **[CashTab Wallet](https://cashtab.com)** - Reference web wallet
 - **[Block Explorer](https://explorer.e.cash)** - Transaction lookup
 
 ### Development
 - **[Chronik Indexer](https://chronik.e.cash/)** - Blockchain API
 - **[ecash-lib Documentation](https://www.npmjs.com/package/ecash-lib)** - Core library
-- **[SLP Specification](https://github.com/badger-cash/slp-specification)** - Token standard
-- **[ALP Specification](https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/doc/standards/empp.md)** - ALP token standard
+- **[SLP and ALP tokens](https://github.com/Bitcoin-ABC/bitcoin-abc/tree/master/cashtab/src/token-protocols)** - CashTab token protocols
 
 ## 📄 License
 
