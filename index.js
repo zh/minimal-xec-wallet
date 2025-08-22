@@ -68,6 +68,11 @@ class MinimalXECWallet {
     this.ar = new AdapterRouter(chronikOptions)
     chronikOptions.ar = this.ar
 
+    // Add analytics configuration to chronik options
+    if (this.advancedOptions.utxoAnalytics) {
+      chronikOptions.utxoAnalytics = this.advancedOptions.utxoAnalytics
+    }
+
     // Instantiate local libraries
     this.sendXecLib = new SendXEC(chronikOptions)
     this.utxos = new Utxos(chronikOptions)

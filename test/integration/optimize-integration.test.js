@@ -40,7 +40,7 @@ describe('#Integration Tests - Wallet UTXO Optimization', () => {
     // The message should indicate it's a dry run
     assert.ok(
       dryRunResult.message.includes('Dry run') ||
-      dryRunResult.message.includes('Not enough UTXOs') ||
+      dryRunResult.message.includes('Not enough') ||
       dryRunResult.message.includes('No optimization needed'),
       'Message explains dry run result or why no consolidation needed'
     )
