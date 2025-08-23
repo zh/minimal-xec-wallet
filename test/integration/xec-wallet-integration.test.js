@@ -169,6 +169,30 @@ describe('#Integration Tests - XEC Wallet with Chronik API', () => {
       assert.equal(keyPair1.xecAddress, keyPair2.xecAddress)
       assert.equal(keyPair1.wif, keyPair2.wif)
     })
+
+    it('should respect hdPath coin type for key derivation', async function () {
+      this.timeout(timeout)
+
+      // Test with standard eCash hdPath (coin type 899)
+      const standardWallet = new MinimalXECWallet(TEST_MNEMONIC, { hdPath: "m/44'/899'/0'/0/0" })
+      await standardWallet.walletInfoPromise
+      const standardKeyPair = await standardWallet.getKeyPair(1)
+
+      // Test with CashTab hdPath (coin type 1899)
+      const cashtabWallet = new MinimalXECWallet(TEST_MNEMONIC, { hdPath: "m/44'/1899'/0'/0/0" })
+      await cashtabWallet.walletInfoPromise
+      const cashtabKeyPair = await cashtabWallet.getKeyPair(1)
+
+      // Should generate different addresses due to different coin types
+      assert.property(standardKeyPair, 'xecAddress')
+      assert.property(cashtabKeyPair, 'xecAddress')
+      assert.notEqual(standardKeyPair.xecAddress, cashtabKeyPair.xecAddress)
+      assert.notEqual(standardKeyPair.wif, cashtabKeyPair.wif)
+
+      // Verify the addresses start with expected prefix
+      assert.isTrue(standardKeyPair.xecAddress.startsWith('ecash:'))
+      assert.isTrue(cashtabKeyPair.xecAddress.startsWith('ecash:'))
+    })
   })
 
   describe('#Utility Functions', () => {

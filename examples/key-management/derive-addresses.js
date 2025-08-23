@@ -53,15 +53,21 @@ async function deriveAddresses () {
       return
     }
 
-    // Create wallet instance from saved data
-    const wallet = new MinimalXECWallet(walletData.mnemonic)
+    // Create wallet instance from saved data with proper hdPath
+    const hdPath = walletData.hdPath || "m/44'/899'/0'/0/0"
+    const wallet = new MinimalXECWallet(walletData.mnemonic, { hdPath: hdPath })
     await wallet.walletInfoPromise
+
+    // Determine coin type for display
+    const coinType = hdPath.includes('1899') ? '1899' : '899'
+    const walletType = coinType === '1899' ? 'CashTab' : 'Standard eCash'
 
     console.log('📋 Wallet Information:')
     console.log('═'.repeat(60))
     console.log(`Mnemonic: ${walletData.mnemonic.split(' ').length} words`)
     console.log(`Base Address: ${walletData.xecAddress}`)
-    console.log(`Base HD Path: ${walletData.hdPath}`)
+    console.log(`Base HD Path: ${hdPath}`)
+    console.log(`Wallet Type: ${walletType} (coin type ${coinType})`)
     console.log(`Addresses to derive: ${count}`)
     console.log('═'.repeat(60))
 
@@ -91,9 +97,9 @@ async function deriveAddresses () {
     console.log('─'.repeat(80))
 
     addresses.forEach(addr => {
-      const hdPath = `m/44'/899'/0'/0/${addr.index}`
+      const derivedPath = `m/44'/${coinType}'/0'/0/${addr.index}`
       const addressShort = `${addr.address.substring(0, 25)}...${addr.address.substring(addr.address.length - 8)}`
-      console.log(`${addr.index.toString().padStart(3)}    ${addressShort}  ${hdPath}`)
+      console.log(`${addr.index.toString().padStart(3)}    ${addressShort}  ${derivedPath}`)
     })
 
     console.log('═'.repeat(80))
@@ -107,7 +113,7 @@ async function deriveAddresses () {
         console.log(`\n${i + 1}. Address ${addr.index}:`)
         console.log('   ─'.repeat(50))
         console.log(`   Address: ${addr.address}`)
-        console.log(`   HD Path: m/44'/899'/0'/0/${addr.index}`)
+        console.log(`   HD Path: m/44'/${coinType}'/0'/0/${addr.index}`)
 
         // Show private key format (truncated for security)
         const pkShort = `${addr.privateKey.substring(0, 8)}...${addr.privateKey.substring(addr.privateKey.length - 8)}`

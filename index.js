@@ -740,7 +740,11 @@ class MinimalXECWallet {
         throw new Error('Wallet does not have a mnemonic. Cannot generate key pair.')
       }
 
-      const customPath = `m/44'/899'/0'/0/${hdIndex}`
+      // Build path using same pattern as wallet's main hdPath (robust approach)
+      // This respects the wallet's coin type (899 for standard, 1899 for CashTab)
+      const basePath = this.hdPath.substring(0, this.hdPath.lastIndexOf('/'))
+      const customPath = `${basePath}/${hdIndex}`
+
       const keyData = this.keyDerivation.deriveFromMnemonic(this.walletInfo.mnemonic, customPath)
 
       return {

@@ -112,22 +112,33 @@ const mnemonic = wallet.decrypt(encryptedData, 'securePassword123')
 
 ### async getKeyPair(hdIndex)
 
-Generates a key pair for a specific HD wallet index.
+Generates a key pair for a specific HD wallet index using the same derivation path pattern as the main wallet.
 
 **Parameters:**
 - `hdIndex` (number, optional) - HD index for key derivation (default: 0)
 
 **Returns:** `Object` containing:
 - `hdIndex` - The HD index used
-- `wif` - Private key in WIF format
-- `publicKey` - Public key
+- `wif` - Private key in hex format (not WIF)
+- `publicKey` - Public key in hex format
 - `xecAddress` - eCash address for this key pair
 
-**Example:**
+**Behavior:**
+- Uses the wallet's configured hdPath pattern, respecting the coin type (899 for standard eCash, 1899 for CashTab)
+- For a wallet with hdPath `m/44'/899'/0'/0/0`, calling `getKeyPair(1)` generates keys for `m/44'/899'/0'/0/1`
+- For a wallet with hdPath `m/44'/1899'/0'/0/0`, calling `getKeyPair(1)` generates keys for `m/44'/1899'/0'/0/1`
+
+**Examples:**
 ```javascript
-// Get key pair for index 5
-const keyPair = await wallet.getKeyPair(5)
-console.log(keyPair.xecAddress) // ecash:qr...
+// Standard eCash wallet (coin type 899)
+const standardWallet = new MinimalXecWallet(mnemonic, { hdPath: "m/44'/899'/0'/0/0" })
+const keyPair1 = await standardWallet.getKeyPair(1)
+console.log(keyPair1.xecAddress) // Address derived from m/44'/899'/0'/0/1
+
+// CashTab wallet (coin type 1899)
+const cashtabWallet = new MinimalXecWallet(mnemonic, { hdPath: "m/44'/1899'/0'/0/0" })
+const keyPair1 = await cashtabWallet.getKeyPair(1)
+console.log(keyPair1.xecAddress) // Address derived from m/44'/1899'/0'/0/1 (different from above)
 ```
 
 ### exportPrivateKeyAsWIF(compressed, testnet)

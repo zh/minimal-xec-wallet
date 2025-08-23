@@ -556,5 +556,77 @@ describe('#index.js - Minimal XEC Wallet', () => {
         assert.strictEqual(testnetWallet.validateWIF(exportedTestnetWIF), true)
       })
     })
+
+    describe('#getKeyPair', () => {
+      it('should generate key pairs with correct hdPath pattern', async () => {
+        const keyPair0 = await uut.getKeyPair(0)
+        const keyPair1 = await uut.getKeyPair(1)
+
+        // Should have all required properties
+        assert.property(keyPair0, 'hdIndex')
+        assert.property(keyPair0, 'wif')
+        assert.property(keyPair0, 'publicKey')
+        assert.property(keyPair0, 'xecAddress')
+
+        assert.property(keyPair1, 'hdIndex')
+        assert.property(keyPair1, 'wif')
+        assert.property(keyPair1, 'publicKey')
+        assert.property(keyPair1, 'xecAddress')
+
+        // Should have different addresses for different indices
+        assert.notEqual(keyPair0.xecAddress, keyPair1.xecAddress)
+        assert.notEqual(keyPair0.wif, keyPair1.wif)
+
+        // Should have correct hdIndex values
+        assert.strictEqual(keyPair0.hdIndex, 0)
+        assert.strictEqual(keyPair1.hdIndex, 1)
+      })
+
+      it('should respect wallet hdPath coin type', async () => {
+        // Test with standard eCash hdPath (coin type 899)
+        const standardWallet = new MinimalXECWallet(undefined, { hdPath: "m/44'/899'/0'/0/0" })
+        await standardWallet.walletInfoPromise
+        const standardKeyPair = await standardWallet.getKeyPair(1)
+
+        // Test with CashTab hdPath (coin type 1899)
+        const cashtabWallet = new MinimalXECWallet(undefined, { hdPath: "m/44'/1899'/0'/0/0" })
+        await cashtabWallet.walletInfoPromise
+        const cashtabKeyPair = await cashtabWallet.getKeyPair(1)
+
+        // Should generate different addresses due to different coin types
+        assert.property(standardKeyPair, 'xecAddress')
+        assert.property(cashtabKeyPair, 'xecAddress')
+        assert.notEqual(standardKeyPair.xecAddress, cashtabKeyPair.xecAddress)
+        assert.notEqual(standardKeyPair.wif, cashtabKeyPair.wif)
+
+        // Should have same hdIndex
+        assert.strictEqual(standardKeyPair.hdIndex, 1)
+        assert.strictEqual(cashtabKeyPair.hdIndex, 1)
+      })
+
+      it('should produce consistent results for same hdIndex', async () => {
+        const keyPair1 = await uut.getKeyPair(5)
+        const keyPair2 = await uut.getKeyPair(5)
+
+        // Should generate identical key pairs for same index
+        assert.strictEqual(keyPair1.xecAddress, keyPair2.xecAddress)
+        assert.strictEqual(keyPair1.wif, keyPair2.wif)
+        assert.strictEqual(keyPair1.publicKey, keyPair2.publicKey)
+        assert.strictEqual(keyPair1.hdIndex, keyPair2.hdIndex)
+      })
+
+      it('should handle edge case hdIndex values', async () => {
+        // Test with 0 index (should work)
+        const keyPair0 = await uut.getKeyPair(0)
+        assert.strictEqual(keyPair0.hdIndex, 0)
+        assert.property(keyPair0, 'xecAddress')
+
+        // Test with large index
+        const keyPair999 = await uut.getKeyPair(999)
+        assert.strictEqual(keyPair999.hdIndex, 999)
+        assert.property(keyPair999, 'xecAddress')
+        assert.notEqual(keyPair0.xecAddress, keyPair999.xecAddress)
+      })
+    })
   })
 })
