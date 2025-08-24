@@ -6,13 +6,15 @@
 **Comprehensive coverage of XEC core functionality with mocked dependencies**
 
 #### a01-minimal-xec-wallet-unit.js
-- **Wallet Constructor**: Chronik endpoints, HD paths, fee configuration
+
+- **Wallet Constructor**: Chronik endpoints, HD paths, fee configuration, analytics options
 - **Wallet Creation**: From mnemonic, WIF, encrypted mnemonic
 - **Core Methods**: create(), initialize(), getXecBalance(), getUtxos() 
 - **Address Validation**: XEC address formats, invalid address handling
 - **Encryption/Decryption**: Mnemonic security with PBKDF2
 - **Error Handling**: Sanitized error messages, graceful failures
 - **eToken Operations**: Full SLP/ALP token functionality
+- **Analytics Integration**: UTXO analytics configuration and initialization
 
 #### a02-key-derivation-unit.js  
 - **Mnemonic Generation**: BIP39 12/24 word phrases
@@ -23,12 +25,14 @@
 - **XEC Specifics**: Coin type 899 vs BCH 245 differences
 
 #### a03-utxos-unit.js
+
 - **UTXO Store**: Initialization, caching, performance metrics
 - **Chronik Integration**: Retry logic, error handling, batch requests
 - **UTXO Filtering**: Dust limits, sorting by value, spendable selection
 - **Cache Management**: Force refresh, cache clearing, hit rate tracking
 - **Performance**: Large UTXO set handling, efficiency testing
 - **eToken UTXOs**: Full hybrid token UTXO management
+- **Analytics Integration**: Classification and health monitoring for UTXOs
 
 #### a04-send-xec-unit.js
 - **Transaction Creation**: Single/multiple outputs, fee calculation
@@ -47,6 +51,24 @@
 - **Price Data**: XEC/USD rate fetching (when available)
 - **UTXO Validation**: Spend status checking, confirmation
 - **Caching**: Frequently accessed data optimization
+
+#### a10-utxo-classifier-unit.js
+
+- **UTXO Classification**: Age, value, health, privacy scoring
+- **Classification Categories**: Fresh, recent, mature, aged, ancient UTXOs
+- **Value Classification**: Dust, micro, small, medium, large, whale categories
+- **Health Assessment**: Healthy, at-risk, dust, suspicious, unconfirmed states
+- **Privacy Analysis**: Round number detection, fingerprinting risk assessment
+- **Performance Testing**: Large UTXO set classification efficiency
+
+#### a11-utxo-health-monitor-unit.js
+
+- **Health Monitoring**: Real-time UTXO health assessment
+- **Alert Generation**: Critical issue detection and alerting
+- **Dust Attack Detection**: Pattern recognition for suspicious micro-UTXOs
+- **Economic Analysis**: Viability calculations and fee efficiency scoring
+- **Optimization Recommendations**: Consolidation and improvement suggestions
+- **Security Threat Assessment**: Comprehensive threat analysis and mitigation
 
 ### Mock Data (test/unit/mocks/)
 
@@ -167,8 +189,12 @@ npm run test:coverage
 ## Implementation Complete
 
 ✅ **eToken operations fully implemented and tested**
-✅ **SLP and ALP protocol support with 424 unit tests**
-✅ **Integration test framework covers all token scenarios**
-✅ **Coverage goals achieved for both XEC and token features**
+✅ **SLP and ALP protocol support with 450+ unit tests**
+✅ **Complete UTXO analytics system with comprehensive testing**
+✅ **Advanced health monitoring and optimization features**
+✅ **Dust attack detection and security analysis**
+✅ **Smart coin selection with multiple strategies**
+✅ **Integration test framework covers all scenarios including analytics**
+✅ **Coverage goals achieved for XEC, token, and analytics features**
 
-The comprehensive test suite ensures both XEC wallet core functionality and complete eToken operations (SLP + ALP protocols) are thoroughly validated and production-ready.
+The comprehensive test suite ensures XEC wallet core functionality, complete eToken operations (SLP + ALP protocols), and advanced UTXO analytics are thoroughly validated and production-ready.

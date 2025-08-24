@@ -4,7 +4,7 @@ This guide provides complete instructions for testing the hybrid SLP/ALP token f
 
 ## 🎯 Overview
 
-The Minimal XEC Wallet supports both **SLP (Simple Ledger Protocol)** and **ALP (A Ledger Protocol)** tokens with automatic protocol detection. This guide covers all testing scenarios from empty wallets to full token operations.
+The Minimal XEC Wallet supports both **SLP (Simple Ledger Protocol)** and **ALP (A Ledger Protocol)** tokens with automatic protocol detection. This guide covers all testing scenarios from empty wallets to full token operations, including **UTXO analytics integration** for optimized token management.
 
 ## 🚀 Quick Start
 
@@ -14,6 +14,7 @@ node examples/test-examples.js
 ```
 
 This runs all tests including **Phase 4: Token Operations** which validates:
+
 - ✅ Token listing (SLP + ALP)
 - ✅ Token metadata retrieval  
 - ✅ Protocol auto-detection
@@ -21,24 +22,32 @@ This runs all tests including **Phase 4: Token Operations** which validates:
 - ✅ Error handling and validation
 - ✅ UTXO consolidation with tokens
 - ✅ Infrastructure integration
+- ✅ Analytics integration for token UTXOs
+- ✅ Smart coin selection with token awareness
 
 ## 📋 Test Categories
 
 ### 1. Infrastructure Validation
 
 **Comprehensive Infrastructure Test**
+
 ```bash
 node examples/validation/comprehensive-infrastructure-test.js
 ```
 
 Validates:
+
 - Core wallet functionality
-- UTXO consolidation system (91% test coverage)
+- UTXO consolidation system (95% test coverage)
 - Hybrid token management
 - Component integration
 - Protocol detection capabilities
+- Analytics system integration
+- Health monitoring for token UTXOs
+- Smart coin selection with token awareness
 
 **Expected Output:**
+
 ```
 🎯 INFRASTRUCTURE TEST RESULTS
 ✅ Core wallet functionality: WORKING
@@ -46,6 +55,8 @@ Validates:
 ✅ Hybrid token management: WORKING
 ✅ Component integration: WORKING
 ✅ Protocol detection: WORKING
+✅ Analytics system integration: WORKING
+✅ Token UTXO health monitoring: WORKING
 🚀 MVP Infrastructure Status: COMPLETE AND VALIDATED
 ```
 
@@ -54,11 +65,13 @@ Validates:
 These work **regardless of whether your wallet holds tokens**.
 
 **List All Tokens in Wallet**
+
 ```bash
 node examples/tokens/list-all-tokens.js
 ```
 
 **Get Token Information (External Token)**
+
 ```bash
 # Using FLCT (SLP token) - works even if you don't hold it
 node examples/tokens/get-token-info.js 5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135
@@ -68,6 +81,7 @@ node examples/tokens/get-token-info.js FLCT
 ```
 
 **Check Token Balance**
+
 ```bash
 # For token you hold
 node examples/tokens/get-token-balance.js FLCT
@@ -81,12 +95,14 @@ node examples/tokens/get-token-balance.js 5e40dda12765d0b3819286f4bd50ec58a4bf8d
 These test error handling when wallet has no tokens (expected behavior).
 
 **Test Token Send Validation**
+
 ```bash
 node examples/tokens/send-any-token.js TEST ecash:qpg562clu3350dnk3z3lenvxgyexyt7j6vnz4qg606 1
 ```
 **Expected:** Shows "No tokens found in wallet" with helpful guidance.
 
 **Test Token Burn Validation**
+
 ```bash
 node examples/tokens/burn-tokens.js TEST 1  
 ```
@@ -95,17 +111,34 @@ node examples/tokens/burn-tokens.js TEST 1
 ### 4. UTXO Management Tests
 
 **UTXO Consolidation Test**
+
 ```bash
 node examples/optimization/test-utxo-consolidation.js
 ```
 
 Tests:
+
 - UTXO distribution analysis
 - Optimization savings estimation  
 - Dry run consolidation analysis
 - Smart cost-benefit logic
 
+**Analytics-Enhanced Token Management**
+
+```bash
+node examples/analytics/utxo-classification-demo.js
+node examples/analytics/health-monitoring-demo.js
+```
+
+Tests:
+
+- Token UTXO classification and health assessment
+- Smart coin selection with token awareness  
+- Optimization recommendations for token-holding wallets
+- Performance analysis with mixed XEC/token UTXOs
+
 **Expected Results:**
+
 ```
 📊 Current Wallet State:
    XEC Balance: 53.47 XEC
@@ -126,31 +159,39 @@ Tests:
 ### SLP Token Testing
 
 **Test with FLCT Token (SLP)**
+
 ```bash
 # Get comprehensive info
 node examples/tokens/get-token-info.js 5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135
 ```
 
 **Expected Features:**
+
 - ✅ Protocol: SLP
 - ✅ Standard: Simple Ledger Protocol v1  
 - ✅ IPFS URL handling
 - ✅ Fixed supply detection
 - ✅ Explorer links
+- ✅ Token UTXO health classification
+- ✅ Smart consolidation recommendations
 
 ### ALP Token Testing  
 
 **Test with ALP Token (if available)**
+
 ```bash
 # Replace with actual ALP token ID
 node examples/tokens/get-token-info.js <alp_token_id>
 ```
 
 **Expected Features:**
+
 - ✅ Protocol: ALP
 - ✅ Standard: A Ledger Protocol v1
 - ✅ eMPP script type
 - ✅ Atom-based precision
+- ✅ Token UTXO analytics integration
+- ✅ Health monitoring for ALP tokens
 
 ## 🧪 Advanced Testing Scenarios
 
@@ -200,8 +241,9 @@ If your wallet has both SLP and ALP tokens:
 ## 🔍 Unit Testing
 
 **Run Token-Related Unit Tests**
+
 ```bash
-# UTXO consolidation (91% coverage)
+# UTXO consolidation (95% coverage)
 npm test -- test/unit/a04-consolidate-utxos-unit.js
 
 # Token protocol detection
@@ -215,9 +257,15 @@ npm test -- test/unit/a08-alp-token-handler-unit.js
 
 # Hybrid token manager
 npm test -- test/unit/a09-hybrid-token-manager-unit.js
+
+# UTXO classification (with token support)
+npm test -- test/unit/a10-utxo-classifier-unit.js
+
+# Health monitoring (token-aware)
+npm test -- test/unit/a11-utxo-health-monitor-unit.js
 ```
 
-**Expected:** All tests pass with high coverage.
+**Expected:** All tests pass with high coverage, including analytics integration.
 
 ## 🐛 Troubleshooting
 
@@ -245,17 +293,20 @@ npm test -- test/unit/a09-hybrid-token-manager-unit.js
 ### Debugging Commands
 
 **Check Wallet State**
+
 ```bash
 node examples/wallet-info/get-balance.js
 node examples/wallet-info/get-utxos.js  
 ```
 
 **Validate Network Connection**
+
 ```bash
 node examples/advanced/get-xec-price.js
 ```
 
 **Test Basic Functionality**
+
 ```bash
 node examples/key-management/validate-address.js <your_address>
 ```
@@ -288,24 +339,35 @@ node examples/key-management/validate-address.js <your_address>
 ## 🎯 Success Criteria
 
 ### Infrastructure Tests Must Pass:
+
 - [x] Core wallet functionality
-- [x] UTXO consolidation (91% test coverage)
+- [x] UTXO consolidation (95% test coverage)
 - [x] Hybrid token management  
 - [x] Component integration
 - [x] Protocol detection
+- [x] Analytics system integration
+- [x] Token UTXO health monitoring
+- [x] Smart coin selection with token awareness
 
 ### Token Tests Must Show:
+
 - [x] Proper empty wallet handling
 - [x] External token metadata lookup
 - [x] Protocol auto-detection (SLP/ALP)
 - [x] Error handling with helpful guidance
 - [x] UTXO optimization integration
+- [x] Token UTXO classification and health scoring
+- [x] Analytics-enhanced optimization recommendations
+- [x] Performance analysis for mixed XEC/token wallets
 
 ### Educational Value Must Include:
+
 - [x] Clear explanations of SLP vs ALP
 - [x] Helpful error messages with recovery steps
 - [x] Links to resources and documentation  
 - [x] Examples of both success and error cases
+- [x] Analytics integration examples for token management
+- [x] Performance optimization guidance for token wallets
 
 ## 🚀 Production Readiness
 
@@ -317,12 +379,16 @@ The token system is **production-ready** when:
 ✅ **Error handling provides helpful guidance**
 ✅ **UTXO consolidation integrates properly**
 ✅ **Protocol detection works automatically**
+✅ **Analytics system integrates with token operations**
+✅ **Smart coin selection handles tokens appropriately**
+✅ **Health monitoring works for token UTXOs**
 
 ## 🔗 Additional Resources
 
 - **SLP Tokens:** https://tokens.bch.sx/
 - **eCash Explorer:** https://explorer.e.cash/
 - **Chronik API:** https://chronik.e.cash/
+- **Analytics Examples:** `examples/analytics/`
 - **Token Examples:** `examples/tokens/`
 - **API Documentation:** `README.md`
 - **UTXO Guide:** `docs/UTXO_OPTIMIZATION_GUIDE.md`

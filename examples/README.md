@@ -11,6 +11,8 @@ examples/
 ├── transactions/            # Send XEC, multi-output, send-all
 ├── advanced/                # OP_RETURN, optimization, price checking
 ├── key-management/          # Address derivation, validation
+├── tokens/                  # SLP/ALP token operations
+├── analytics/               # UTXO analytics, health monitoring, optimization
 ├── utils/                   # Helper utilities (QR codes, wallet helper)
 ├── test-examples.js         # End-to-end testing script
 └── README.md               # This file
@@ -71,6 +73,7 @@ node test-examples.js
 | `import-from-wif.js` | Import wallet from private key | WIF or hex private key |
 
 **Usage:**
+
 ```bash
 # Create new wallet
 node wallet-creation/create-new-wallet.js
@@ -95,6 +98,7 @@ node wallet-creation/import-from-wif.js 1234567890abcdef...  # Hex private key
 | `get-transactions.js` | Show transaction history | Wallet |
 
 **Usage:**
+
 ```bash
 node wallet-info/get-balance.js
 node wallet-info/get-utxos.js
@@ -110,6 +114,7 @@ node wallet-info/get-transactions.js
 | `send-all-xec.js` | Send all XEC (empty wallet) | Funded wallet |
 
 **Usage:**
+
 ```bash
 # Send 100 XEC to an address
 node transactions/send-xec.js ecash:qp1234...abc 100
@@ -131,6 +136,7 @@ node transactions/send-all-xec.js ecash:qp1234...abc
 | `browser-compatibility-test.js` | Test browser WebAssembly compatibility | None |
 
 **Usage:**
+
 ```bash
 # Embed message in blockchain
 node advanced/send-op-return.js "Hello XEC blockchain!"
@@ -156,6 +162,7 @@ open browser-test.html  # Interactive browser test
 | `export-to-wif.js` | Export private key to WIF format | Existing wallet |
 
 **Usage:**
+
 ```bash
 # Generate 10 addresses from mnemonic
 node key-management/derive-addresses.js 10
@@ -179,6 +186,7 @@ node key-management/export-to-wif.js
 | `test-main-wallet-integration.js` | Integration test for token API | Test tokens |
 
 **Usage:**
+
 ```bash
 # List all tokens (auto-detects SLP and ALP)
 node tokens/list-all-tokens.js
@@ -196,6 +204,44 @@ node tokens/get-token-info.js abc123def456...
 node tokens/burn-tokens.js tokenId amount
 ```
 
+### 📊 Analytics Examples (`analytics/`)
+
+| Example | Description | Requirements |
+|---------|-------------|-------------|
+| `utxo-classification-demo.js` | Classify UTXOs by age, value, health, privacy | Wallet with UTXOs |
+| `health-monitoring-demo.js` | Comprehensive wallet health assessment | Wallet with UTXOs |
+| `advanced-coin-selection-demo.js` | Smart UTXO selection strategies | Wallet with UTXOs |
+| `dust-attack-detection-demo.js` | Detect and analyze dust attack patterns | Test data available |
+| `wallet-optimization-demo.js` | Complete optimization analysis | Wallet with UTXOs |
+
+**Features Demonstrated:**
+
+- UTXO classification (age, value, privacy, health)
+- Real-time health monitoring and alerting
+- Intelligent coin selection with multiple strategies
+- Dust attack detection and mitigation
+- Wallet optimization recommendations
+- Performance impact analysis
+
+**Usage:**
+
+```bash
+# UTXO classification and analysis
+node analytics/utxo-classification-demo.js
+
+# Wallet health monitoring
+node analytics/health-monitoring-demo.js
+
+# Smart coin selection strategies
+node analytics/advanced-coin-selection-demo.js
+
+# Dust attack detection
+node analytics/dust-attack-detection-demo.js
+
+# Complete optimization analysis
+node analytics/wallet-optimization-demo.js
+```
+
 ### 🛠️ Utilities (`utils/`)
 
 | Utility | Description | Requirements |
@@ -204,6 +250,7 @@ node tokens/burn-tokens.js tokenId amount
 | `show-qr.js` | Display QR code for address | Valid XEC address |
 
 **Usage:**
+
 ```bash
 # Show QR code for easy mobile scanning
 node utils/show-qr.js ecash:qp1234567890abcdef1234567890abcdef1234567890
@@ -225,6 +272,7 @@ node test-examples.js
 3. **Phase 2: Utilities** - Tests non-transaction features
 4. **Phase 3: Transactions** - Tests real XEC transactions (with confirmation)
 5. **Phase 4: Token Operations** - Tests SLP/ALP token functionality
+6. **Phase 5: Analytics** - Tests UTXO analytics and optimization features
 
 ### Manual Testing
 
@@ -268,31 +316,37 @@ node transactions/send-xec.js ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy 1
 ## 🔗 Useful Resources
 
 ### XEC Network
+
 - **Block Explorer**: https://explorer.e.cash
 - **CashTab Wallet**: https://cashtab.com
-- **eCash.org**: https://e.cash
+- **eCash**: https://e.cash
 
 ### Exchanges (to buy XEC)
+
 - **Binance**: XEC/USDT, XEC/BTC
 - **KuCoin**: XEC/USDT
 - **Gate.io**: XEC/USDT
 
 ### Development
+
 - **Library Source**: https://github.com/zh/minimal-xec-wallet
 - **API Documentation**: ../docs/
 - **Test Coverage**: Run `npm test`
+- **Analytics Documentation**: ./analytics/README.md
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
 **1. "No wallet.json file found"**
+
 ```bash
 # Solution: Create a wallet first
 node wallet-creation/create-new-wallet.js
 ```
 
 **2. "Insufficient funds"**
+
 ```bash
 # Solution: Fund your wallet
 node utils/show-qr.js $(node -e "console.log(require('./wallet.json').xecAddress)")
@@ -300,6 +354,7 @@ node utils/show-qr.js $(node -e "console.log(require('./wallet.json').xecAddress
 ```
 
 **3. "Invalid address format"**
+
 ```bash
 # Solution: Validate the address
 node key-management/validate-address.js YOUR_ADDRESS

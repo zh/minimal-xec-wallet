@@ -9,6 +9,7 @@ Complete reference guide for all `@minimal-xec-wallet` library methods, organize
 - [Balance & UTXO Operations](#balance--utxo-operations)
 - [XEC Transactions](#xec-transactions)
 - [eToken Operations](#etoken-operations)
+- [UTXO Analytics & Optimization](#utxo-analytics--optimization)
 - [Advanced Features](#advanced-features)
 - [Utility Methods](#utility-methods)
 - [Network & Validation](#network--validation)
@@ -26,13 +27,23 @@ Creates a new wallet instance from mnemonic, WIF private key, or generates a new
 - `advancedOptions` (object, optional) - Configuration options
 
 **Advanced Options:**
+
 - `hdPath` (string) - HD derivation path (default: "m/44'/899'/0'/0/0")
 - `chronikUrls` (array) - Array of Chronik endpoints for API calls
 - `fee` (number) - Transaction fee rate in sats/byte (default: 1.2)
 - `password` (string) - Password for encrypting/decrypting mnemonic
 - `enableDonations` (boolean) - Enable donation outputs (default: false)
+- `utxoAnalytics` (object) - Enable advanced UTXO analytics and optimization
+
+**UTXO Analytics Configuration:**
+
+- `utxoAnalytics.enabled` (boolean) - Enable analytics features (default: false)
+- `utxoAnalytics.debug` (boolean) - Enable debug logging (default: false)
+- `utxoAnalytics.classificationConfig` (object) - Classification thresholds
+- `utxoAnalytics.healthMonitorConfig` (object) - Health monitoring settings
 
 **Example:**
+
 ```javascript
 // Generate new wallet
 const wallet = new MinimalXECWallet()
@@ -43,10 +54,29 @@ const wallet = new MinimalXECWallet('abandon abandon abandon...')
 // Import from WIF
 const wallet = new MinimalXECWallet('L1234567890abcdef...')
 
-// With options
+// With options including analytics
 const wallet = new MinimalXECWallet(mnemonic, { 
   fee: 2.0, 
-  enableDonations: false 
+  enableDonations: false,
+  utxoAnalytics: {
+    enabled: true,
+    debug: false,
+    classificationConfig: {
+      ageThresholds: {
+        fresh: 6,     // ~1 hour
+        recent: 144,  // ~1 day  
+        mature: 1008, // ~1 week
+        aged: 4032    // ~1 month
+      },
+      valueThresholds: {
+        dust: 1000,     // 10 XEC
+        micro: 5000,    // 50 XEC
+        small: 50000,   // 500 XEC
+        medium: 500000, // 5000 XEC
+        large: 5000000  // 50000 XEC
+      }
+    }
+  }
 })
 ```
 
@@ -71,6 +101,7 @@ Initializes the wallet by loading UTXOs and token data. Must be called before tr
 **Returns:** `boolean` - True when initialization is complete
 
 **Example:**
+
 ```javascript
 const wallet = new MinimalXECWallet()
 await wallet.initialize()
@@ -87,6 +118,7 @@ Encrypts a mnemonic phrase using AES-256-CBC with PBKDF2 key derivation.
 **Returns:** `string` - Encrypted mnemonic as JSON string
 
 **Example:**
+
 ```javascript
 const encrypted = wallet.encrypt(mnemonic, 'securePassword123')
 ```
@@ -102,6 +134,7 @@ Decrypts an encrypted mnemonic phrase. Supports both new and legacy formats.
 **Returns:** `string` - Decrypted mnemonic phrase
 
 **Example:**
+
 ```javascript
 const mnemonic = wallet.decrypt(encryptedData, 'securePassword123')
 ```
@@ -129,6 +162,7 @@ Generates a key pair for a specific HD wallet index using the same derivation pa
 - For a wallet with hdPath `m/44'/1899'/0'/0/0`, calling `getKeyPair(1)` generates keys for `m/44'/1899'/0'/0/1`
 
 **Examples:**
+
 ```javascript
 // Standard eCash wallet (coin type 899)
 const standardWallet = new MinimalXecWallet(mnemonic, { hdPath: "m/44'/899'/0'/0/0" })
@@ -152,6 +186,7 @@ Exports the wallet's private key in WIF (Wallet Import Format).
 **Returns:** `string` - Private key in WIF format
 
 **Example:**
+
 ```javascript
 // Export compressed mainnet WIF
 const wif = wallet.exportPrivateKeyAsWIF()
@@ -170,6 +205,7 @@ Validates if a string is a valid WIF private key format.
 **Returns:** `boolean` - True if valid WIF format
 
 **Example:**
+
 ```javascript
 const isValid = wallet.validateWIF('L1234567890abcdef...')
 ```
@@ -188,6 +224,7 @@ Gets the total XEC balance for an address or the wallet's address.
 **Returns:** `number` - Balance in XEC (confirmed + unconfirmed)
 
 **Example:**
+
 ```javascript
 // Get wallet balance
 const balance = await wallet.getXecBalance()
@@ -211,6 +248,7 @@ Gets detailed balance information including confirmed and unconfirmed amounts.
 - `satoshis` - Balance amounts in satoshis
 
 **Example:**
+
 ```javascript
 const balance = await wallet.getDetailedBalance()
 console.log(`Confirmed: ${balance.confirmed} XEC`)
@@ -228,6 +266,7 @@ Gets all UTXOs (Unspent Transaction Outputs) for an address.
 **Returns:** `Array` - Array of UTXO objects with transaction data
 
 **Example:**
+
 ```javascript
 const utxos = await wallet.getUtxos()
 console.log(`Found ${utxos.length} UTXOs`)
@@ -243,6 +282,7 @@ Optimizes wallet performance by consolidating small UTXOs into larger ones.
 **Returns:** `Object` - Optimization results and transaction details
 
 **Example:**
+
 ```javascript
 // Preview optimization
 const preview = await wallet.optimize(true)
@@ -265,6 +305,7 @@ Sends XEC to one or multiple recipients.
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 // Send to single recipient
 const txid = await wallet.sendXec([
@@ -288,6 +329,7 @@ Sends all available XEC to a single address (empties the wallet).
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 const txid = await wallet.sendAllXec('ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy')
 ```
@@ -305,6 +347,7 @@ Sends an OP_RETURN transaction to embed data in the blockchain.
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 // Simple message
 const txid = await wallet.sendOpReturn('Hello XEC blockchain!')
@@ -317,6 +360,168 @@ const txid = await wallet.sendOpReturn(
   2.0
 )
 ```
+
+---
+
+## UTXO Analytics & Optimization
+
+The wallet includes advanced UTXO analytics for optimization, health monitoring, and smart coin selection.
+
+### Enabling Analytics
+
+Analytics must be enabled during wallet construction:
+
+```javascript
+const wallet = new MinimalXECWallet(mnemonic, {
+  utxoAnalytics: {
+    enabled: true,
+    debug: false // Set to true for detailed logging
+  }
+})
+```
+
+### async getWalletHealthReport()
+
+Generates a comprehensive health report for all wallet UTXOs.
+
+**Returns:** `Object` containing:
+- `summary` - Overall health statistics
+- `assessments` - Individual UTXO health assessments  
+- `alerts` - Critical issues requiring attention
+- `recommendations` - Optimization suggestions
+
+**Example:**
+
+```javascript
+// Get wallet health report
+const healthReport = await wallet.utxos.getWalletHealthReport()
+console.log(`Health: ${healthReport.summary.healthPercentage}%`)
+console.log(`Spendable: ${healthReport.summary.spendablePercentage}%`)
+
+// Check for alerts
+healthReport.alerts.forEach(alert => {
+  console.log(`Alert: ${alert.message}`)
+})
+```
+
+### async getUtxoClassifications()
+
+Returns detailed classifications for all UTXOs.
+
+**Returns:** `Map` of UTXO ID to classification objects containing:
+- `age` - Age category (fresh, recent, mature, aged, ancient)
+- `value` - Value category (dust, micro, small, medium, large, whale)
+- `health` - Health status (healthy, at-risk, dust, suspicious)
+- `privacy` - Privacy score (0-100)
+- `healthScore` - Overall health score (0-100)
+
+**Example:**
+
+```javascript
+const classifications = await wallet.utxos.getUtxoClassifications()
+for (const [utxoId, classification] of classifications) {
+  console.log(`${utxoId}: ${classification.age}/${classification.value} (${classification.healthScore}/100)`)
+}
+```
+
+### async getOptimizationRecommendations()
+
+Generates actionable optimization recommendations.
+
+**Returns:** `Object` containing:
+- `recommendations` - Array of optimization actions
+- `consolidation` - Consolidation analysis
+- `analysis` - Wallet fragmentation and efficiency scores
+
+**Example:**
+
+```javascript
+const recommendations = await wallet.utxos.getOptimizationRecommendations()
+recommendations.recommendations.forEach(rec => {
+  console.log(`${rec.priority}: ${rec.message}`)
+})
+```
+
+### async detectSecurityThreats(address)
+
+Detects potential dust attacks and security threats.
+
+**Parameters:**
+- `address` (string) - Address to analyze (optional, uses wallet address)
+
+**Returns:** `Object` containing:
+- `severity` - Threat level (none, medium, high, critical)
+- `indicators` - Array of threat indicators
+- `recommendations` - Defense strategies
+
+**Example:**
+
+```javascript
+const threats = await wallet.utxos.detectSecurityThreats()
+if (threats.severity !== 'none') {
+  console.log(`Security threat detected: ${threats.severity}`)
+  threats.recommendations.forEach(rec => console.log(`- ${rec}`))
+}
+```
+
+### Smart Coin Selection
+
+Advanced UTXO selection with multiple strategies:
+
+```javascript
+// Get UTXOs filtered by classification
+const utxos = wallet.utxos.getSpendableXecUtxos({
+  useClassifications: true,
+  classificationFilter: {
+    minHealthScore: 70,
+    minPrivacyScore: 60,
+    allowedAges: ['mature', 'aged', 'ancient'],
+    includeTokens: false
+  }
+})
+
+// Select optimal UTXOs for transaction
+const selection = wallet.utxos.selectOptimalUtxos(targetAmount, {
+  strategy: 'privacy', // 'efficient', 'privacy', 'balanced', 'conservative'
+  feeRate: 1.0
+})
+```
+
+**Selection Strategies:**
+
+- **efficient** - Minimizes transaction fees
+- **privacy** - Maximizes transaction privacy  
+- **balanced** - Balances efficiency and privacy
+- **conservative** - Prefers confirmed UTXOs
+
+### Classification Categories
+
+**Age Classifications:**
+
+- **fresh** - ≤ 6 blocks (~1 hour)
+- **recent** - ≤ 144 blocks (~1 day)
+- **mature** - ≤ 1008 blocks (~1 week)
+- **aged** - ≤ 4032 blocks (~1 month)
+- **ancient** - > 4032 blocks
+- **unconfirmed** - blockHeight = -1
+
+**Value Classifications:**
+
+- **dust** - < 1,000 satoshis (< 10 XEC)
+- **micro** - < 5,000 satoshis (< 50 XEC)
+- **small** - < 50,000 satoshis (< 500 XEC)
+- **medium** - < 500,000 satoshis (< 5,000 XEC)
+- **large** - < 5,000,000 satoshis (< 50,000 XEC)
+- **whale** - ≥ 5,000,000 satoshis (≥ 50,000 XEC)
+
+**Health Classifications:**
+
+- **healthy** - Economical to spend, good privacy
+- **at-risk** - Marginally economical
+- **dust** - Too small to spend economically
+- **suspicious** - Potential dust attack indicators
+- **unconfirmed** - Not yet confirmed
+- **stuck** - Unconfirmed for too long
 
 ---
 
@@ -344,6 +549,7 @@ Lists all eTokens (SLP/ALP tokens) held by an address with automatic protocol de
 - `utxos` - Array of UTXOs containing this token
 
 **Example:**
+
 ```javascript
 const tokens = await wallet.listETokens()
 tokens.forEach(token => {
@@ -367,6 +573,7 @@ Gets the balance of a specific eToken with automatic protocol detection.
 **Returns:** `number` - Token balance (formatted with proper decimals)
 
 **Example:**
+
 ```javascript
 // Get balance for specific token
 const balance = await wallet.getETokenBalance({
@@ -393,6 +600,7 @@ Gets comprehensive data about an eToken including metadata and transaction histo
 **Returns:** `Object` - Token data including metadata, supply, and optional transaction history
 
 **Example:**
+
 ```javascript
 // Basic token data
 const tokenData = await wallet.getETokenData('abc123def456...')
@@ -417,6 +625,7 @@ Sends eTokens to one or multiple recipients with automatic SLP/ALP protocol dete
 - `amount` - Token amount to send (in display units, not atoms)
 
 **Example:**
+
 ```javascript
 // Send SLP or ALP tokens (protocol auto-detected)
 const txid = await wallet.sendETokens('5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135', [
@@ -442,6 +651,7 @@ Burns a specific amount of eTokens (permanently destroys them) with automatic SL
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 // Burn 5 FLCT tokens (SLP)
 const txid = await wallet.burnETokens('5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135', 5)
@@ -461,6 +671,7 @@ Burns all available eTokens of a specific type with automatic protocol detection
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 // Burn all tokens of this type
 const txid = await wallet.burnAllETokens('abc123def456...')
@@ -481,6 +692,7 @@ Gets transaction history for an address.
 **Returns:** `Array` - Array of transaction objects
 
 **Example:**
+
 ```javascript
 // Get recent transactions
 const txs = await wallet.getTransactions()
@@ -499,6 +711,7 @@ Gets detailed data for up to 20 specific transaction IDs.
 **Returns:** `Array` - Array of transaction data objects
 
 **Example:**
+
 ```javascript
 const txData = await wallet.getTxData(['abc123...', 'def456...'])
 ```
@@ -510,6 +723,7 @@ Gets the current XEC price in USD.
 **Returns:** `number` - Current XEC price in USD
 
 **Example:**
+
 ```javascript
 const price = await wallet.getXecUsd()
 console.log(`Current XEC price: $${price} USD`)
@@ -525,6 +739,7 @@ Gets the public key for an address (if available from transaction history).
 **Returns:** `string` - Public key in hex format
 
 **Example:**
+
 ```javascript
 const pubKey = await wallet.getPubKey('ecash:qp123...')
 ```
@@ -544,6 +759,7 @@ Broadcasts a raw transaction hex to the network.
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
+
 ```javascript
 const txid = await wallet.broadcast({ hex: '0100000001...' })
 ```
@@ -558,6 +774,7 @@ Validates if a UTXO is still spendable (not already spent).
 **Returns:** `boolean` - True if UTXO is still valid
 
 **Example:**
+
 ```javascript
 const isValid = await wallet.utxoIsValid(utxo)
 ```
@@ -572,6 +789,7 @@ Converts a CID (Content Identifier) to JSON format.
 **Returns:** `Object` - JSON representation of CID content
 
 **Example:**
+
 ```javascript
 const json = await wallet.cid2json({ cid: 'Qm...' })
 ```
@@ -592,6 +810,7 @@ Internal method to validate XEC address format.
 **Throws:** Error if address is invalid
 
 **Example:**
+
 ```javascript
 // This is an internal method, but address validation happens automatically
 // in all methods that accept addresses
@@ -620,6 +839,7 @@ All methods throw descriptive errors for common issues:
 - **Wallet not initialized** - Need to call `initialize()` first
 
 **Example Error Handling:**
+
 ```javascript
 try {
   const txid = await wallet.sendXec([
@@ -642,6 +862,42 @@ try {
 - **Dust Limit:** 546 satoshis (5.46 XEC)
 - **Chronik Endpoints:** Multiple fallback endpoints for reliability
 - **Donations:** Disabled by default for privacy
+- **Analytics:** Disabled by default for performance
+
+### Analytics Configuration
+
+```javascript
+const analyticsConfig = {
+  utxoAnalytics: {
+    enabled: true,
+    debug: false,
+    classificationConfig: {
+      ageThresholds: {
+        fresh: 6,     // ~1 hour (in blocks)
+        recent: 144,  // ~1 day
+        mature: 1008, // ~1 week  
+        aged: 4032    // ~1 month
+      },
+      valueThresholds: {
+        dust: 1000,     // 10 XEC
+        micro: 5000,    // 50 XEC
+        small: 50000,   // 500 XEC
+        medium: 500000, // 5000 XEC
+        large: 5000000  // 50000 XEC
+      }
+    },
+    healthMonitorConfig: {
+      dustLimit: 546,
+      economicalThreshold: 2.0,
+      suspiciousPatterns: {
+        dustAttackSize: 10,
+        rapidDeposits: 5,
+        timeWindow: 3600000 // 1 hour in milliseconds
+      }
+    }
+  }
+}
+```
 
 ### Environment Variables
 
@@ -659,6 +915,15 @@ See the `/examples` directory for complete working examples of all API methods:
 - **Token Operations:** `/examples/tokens/`
 - **Key Management:** `/examples/key-management/`
 - **Advanced Features:** `/examples/advanced/`
+- **Analytics Demos:** `/examples/analytics/`
 - **Utilities:** `/examples/utils/`
+
+### Analytics Examples
+
+- **UTXO Classification:** `utxo-classification-demo.js`
+- **Health Monitoring:** `health-monitoring-demo.js`
+- **Smart Coin Selection:** `advanced-coin-selection-demo.js`
+- **Dust Attack Detection:** `dust-attack-detection-demo.js`
+- **Wallet Optimization:** `wallet-optimization-demo.js`
 
 Each example includes detailed usage instructions and error handling patterns.

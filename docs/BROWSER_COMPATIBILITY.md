@@ -4,6 +4,8 @@
 
 The minimal-xec-wallet library uses WebAssembly (WASM) for high-performance cryptographic operations via the `ecash-lib` dependency. Modern browsers have restrictions on WebAssembly compilation to prevent main thread blocking, which can cause errors in some environments.
 
+**Note:** UTXO analytics features are designed to work in all browser environments with automatic fallbacks when WebAssembly is unavailable.
+
 ## The Problem
 
 You may encounter this error in newer browsers:
@@ -24,6 +26,7 @@ The library includes comprehensive browser compatibility fixes with multiple fal
 3. **JavaScript Fallbacks** - Pure JS crypto implementations when WASM fails
 4. **Progressive Enhancement** - Graceful degradation for older browsers
 5. **Error Recovery** - Continues working even if WASM initialization fails
+6. **Analytics Compatibility** - UTXO analytics work in all environments with automatic fallbacks
 
 ## Browser Support Matrix
 
@@ -45,11 +48,14 @@ The library includes comprehensive browser compatibility fixes with multiple fal
 // The library handles browser compatibility automatically
 const MinimalXECWallet = require('minimal-xec-wallet')
 
-const wallet = new MinimalXECWallet()
+const wallet = new MinimalXECWallet(null, {
+  utxoAnalytics: { enabled: true } // Analytics work in all browsers
+})
 await wallet.initialize() // Automatically handles WASM loading
 
 // Use normally - fallbacks are transparent
 const balance = await wallet.getXecBalance()
+const health = await wallet.utxos.getWalletHealthReport() // Works in all browsers
 const txid = await wallet.sendXec([
   { address: 'ecash:qp123...', amountSats: 10000 }
 ])
@@ -98,22 +104,27 @@ console.log('Web Workers:', capabilities.webWorkers)
 ## Performance Considerations
 
 ### With WebAssembly (Optimal)
+
 - ⚡ **Fast cryptographic operations** (native speed)
 - ⚡ **Efficient transaction building**
 - ⚡ **Quick signature verification**
 - 🔋 **Low CPU usage**
+- 📊 **Full analytics performance** (fast UTXO processing)
 
 ### With JavaScript Fallbacks (Compatible)
+
 - 🐌 **Slower crypto operations** (pure JS)
 - 🔋 **Higher CPU usage**
-- ⚠️ **Limited functionality** (some features may be stubbed)
+- ⚠️ **Limited WASM-dependent functionality** (crypto operations)
 - ✅ **Universal compatibility**
+- 📊 **Full analytics support** (analytics don't require WASM)
 
 ## Troubleshooting
 
 ### Common Issues and Solutions
 
 **1. "WebAssembly.Compile is disallowed" Error**
+
 ```javascript
 // Solution: Update to latest version (auto-fixed)
 npm install minimal-xec-wallet@latest
@@ -125,6 +136,7 @@ await wallet.initialize()
 ```
 
 **2. Slow Performance in Older Browsers**
+
 ```javascript
 // Check if WASM is active
 const wasmShim = require('minimal-xec-wallet/browser-shims/ecash_lib_wasm_browser')
@@ -135,6 +147,7 @@ if (!wasmShim.isInitialized()) {
 ```
 
 **3. Worker Compilation Timeouts**
+
 ```javascript
 // The library automatically handles timeouts, but you can detect them:
 try {
@@ -164,6 +177,7 @@ const wallet = new MinimalXECWallet()
 The library works out-of-the-box with common bundlers:
 
 **Webpack:**
+
 ```javascript
 // webpack.config.js
 module.exports = {
@@ -178,12 +192,14 @@ module.exports = {
 ```
 
 **Browserify:**
+
 ```javascript
 // Already configured - no changes needed
 // The browser field in package.json handles compatibility
 ```
 
 **Vite/Rollup:**
+
 ```javascript
 // vite.config.js
 export default {
@@ -227,6 +243,7 @@ node examples/advanced/browser-compatibility-test.js
 - [ ] ✅ Initialize wallet successfully
 - [ ] ✅ Check WASM initialization status
 - [ ] ✅ Perform basic operations (address generation, validation)
+- [ ] ✅ Test UTXO analytics features (classification, health monitoring)
 - [ ] ✅ Test transaction building (if funded)
 - [ ] ✅ Verify no console errors
 
@@ -286,5 +303,6 @@ If you encounter browser compatibility issues:
 - ✅ **Mobile browsers** (iOS Safari, Chrome Mobile)
 - ✅ **Electron** applications
 - ✅ **Web Workers** and **Service Workers**
+- ✅ **Analytics Features** (work in all environments)
 
-The library is designed to work everywhere JavaScript runs, with progressive enhancement for better performance when WebAssembly is available.
+The library is designed to work everywhere JavaScript runs, with progressive enhancement for better performance when WebAssembly is available. UTXO analytics features are implemented in pure JavaScript and work across all supported environments without requiring WebAssembly.

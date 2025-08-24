@@ -27,10 +27,20 @@ A minimalist eCash (XEC) wallet npm library for web applications with full SLP a
 - **Hybrid Management**: Unified API for both SLP and ALP tokens
 
 ### ✅ Advanced Features
+
 - **OP_RETURN**: Embed data in blockchain transactions
 - **Security**: AES-256 mnemonic encryption, dust attack protection
 - **Network Resilience**: Multiple Chronik endpoint failover
 - **Price Queries**: Real-time XEC/USD pricing
+
+### ✅ UTXO Analytics & Optimization
+
+- **Smart Classification**: Age, value, privacy, and health analysis
+- **Health Monitoring**: Real-time wallet health assessment
+- **Dust Attack Detection**: Automated threat identification and mitigation
+- **Intelligent Coin Selection**: Multiple strategies (efficient, privacy, balanced)
+- **Optimization Recommendations**: Automated consolidation and improvement suggestions
+- **Custom HD Paths**: Support for different derivation paths (standard eCash, CashTab)
 
 ## 🚀 Quick Start
 
@@ -45,15 +55,21 @@ npm install minimal-xec-wallet
 ```javascript
 const MinimalXECWallet = require('minimal-xec-wallet')
 
-// Create new wallet
-const wallet = new MinimalXECWallet()
+// Create new wallet with analytics enabled
+const wallet = new MinimalXECWallet(null, {
+  utxoAnalytics: { enabled: true }
+})
 await wallet.initialize()
 
 // Check balance
 const balance = await wallet.getXecBalance()
 console.log(`Balance: ${balance} XEC`)
 
-// Send XEC
+// Get wallet health report
+const health = await wallet.utxos.getWalletHealthReport()
+console.log(`Health Score: ${health.summary.healthPercentage}%`)
+
+// Send XEC with smart coin selection
 const txid = await wallet.sendXec([
   { address: 'ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy', amountSats: 10000 }
 ])
@@ -90,16 +106,19 @@ await wallet.sendETokens('tokenId...', [
 ## 📚 Documentation
 
 ### API Reference
+
 - **[Complete API Documentation](./WALLET_API.md)** - All methods with examples
 - **[Examples Collection](./examples/README.md)** - 25+ working examples
 - **[Development Docs](./docs/README.md)** - Architecture and implementation details
 - **[Browser Compatibility Guide](./docs/BROWSER_COMPATIBILITY.md)** - WebAssembly and fallback support
 
 ### Quick Links
+
 - **[Wallet Creation Examples](./examples/wallet-creation/)** - Create, restore, import wallets
 - **[Transaction Examples](./examples/transactions/)** - Send XEC, multi-output, send-all
 - **[Token Examples](./examples/tokens/)** - SLP/ALP token operations
 - **[Advanced Examples](./examples/advanced/)** - OP_RETURN, optimization, price queries, compatibility testing
+- **[Analytics Examples](./examples/analytics/)** - UTXO classification, health monitoring, smart selection
 
 ## 🧪 Testing
 
@@ -145,10 +164,13 @@ node examples/advanced/browser-compatibility-test.js
 - **Security First**: Built-in protections against common attacks
 
 ### Core Components
+
 - **HybridTokenManager**: Unified SLP/ALP token operations
 - **RobustChronikRouter**: Network failover and error handling
 - **ConsolidateUtxos**: UTXO optimization engine
 - **KeyDerivation**: HD wallet key management
+- **UtxoClassifier**: Advanced UTXO classification and analysis
+- **UtxoHealthMonitor**: Real-time health monitoring and threat detection
 
 ### Dependencies
 - **chronik-client**: eCash blockchain indexer
@@ -166,7 +188,19 @@ const wallet = new MinimalXECWallet(mnemonic, {
   fee: 2.0,                          // Fee rate in sats/byte
   chronikUrls: ['https://chronik.e.cash'], // Custom endpoints
   enableDonations: false,            // Privacy mode
-  password: 'secure123'              // Mnemonic encryption
+  password: 'secure123',             // Mnemonic encryption
+  utxoAnalytics: {                   // Enable advanced analytics
+    enabled: true,
+    debug: false,
+    classificationConfig: {
+      ageThresholds: {
+        fresh: 6,     // ~1 hour
+        recent: 144,  // ~1 day
+        mature: 1008, // ~1 week
+        aged: 4032    // ~1 month
+      }
+    }
+  }
 })
 ```
 
@@ -206,20 +240,24 @@ npm run docs
 
 ## 📊 Project Stats
 
-- **424 Unit Tests** - Comprehensive coverage of all features
-- **29 Integration Tests** - Real network validation
-- **25+ Examples** - Working code for all use cases
+- **450+ Unit Tests** - Comprehensive coverage including analytics
+- **35+ Integration Tests** - Real network validation with analytics
+- **30+ Examples** - Working code for all use cases including analytics demos
 - **6 Token Protocols** - SLP Type 1, ALP Standard, auto-detection
 - **7 Chronik Endpoints** - Robust network failover
+- **5 UTXO Classification Categories** - Age, value, health, privacy analysis
+- **4 Coin Selection Strategies** - Efficient, privacy, balanced, conservative
 
 ## 🔗 Resources
 
 ### eCash Ecosystem
+
 - **[eCash](https://e.cash)** - Official eCash website
 - **[CashTab Wallet](https://cashtab.com)** - Reference web wallet
 - **[Block Explorer](https://explorer.e.cash)** - Transaction lookup
 
 ### Development
+
 - **[Chronik Indexer](https://chronik.e.cash/)** - Blockchain API
 - **[ecash-lib Documentation](https://www.npmjs.com/package/ecash-lib)** - Core library
 - **[SLP and ALP tokens](https://github.com/Bitcoin-ABC/bitcoin-abc/tree/master/cashtab/src/token-protocols)** - CashTab token protocols
@@ -232,6 +270,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 - **Issues**: [GitHub Issues](https://github.com/your-repo/minimal-xec-wallet/issues)
 - **Examples**: See `./examples` directory for working code
+- **Analytics Examples**: See `./examples/analytics` for advanced features
 - **API Docs**: Run `npm run docs` for detailed API documentation
 - **Community**: eCash developer channels
 
