@@ -109,7 +109,6 @@ await wallet.sendETokens('tokenId...', [
 
 - **[Complete API Documentation](./WALLET_API.md)** - All methods with examples
 - **[Examples Collection](./examples/README.md)** - 25+ working examples
-- **[Development Docs](./docs/README.md)** - Architecture and implementation details
 - **[Browser Compatibility Guide](./docs/BROWSER_COMPATIBILITY.md)** - WebAssembly and fallback support
 
 ### Quick Links

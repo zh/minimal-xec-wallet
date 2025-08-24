@@ -391,7 +391,6 @@ The token system is **production-ready** when:
 - **Analytics Examples:** `examples/analytics/`
 - **Token Examples:** `examples/tokens/`
 - **API Documentation:** `README.md`
-- **UTXO Guide:** `docs/UTXO_OPTIMIZATION_GUIDE.md`
 
 ## 💡 Next Steps
 
