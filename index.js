@@ -643,6 +643,24 @@ class MinimalXECWallet {
         throw new Error('Wallet UTXOs not loaded. Try calling initialize() first.')
       }
 
+      // Verify WASM initialization status and provide user feedback
+      let wasmStatus = false
+      try {
+        if (typeof window !== 'undefined') {
+          const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
+          wasmStatus = wasmShim.isInitialized()
+
+          if (!wasmStatus) {
+            console.warn('WebAssembly not fully initialized - using JavaScript fallbacks for token operations')
+            console.warn('This may result in slower performance but full functionality is preserved')
+          } else {
+            console.log('WebAssembly cryptographic functions active - optimized performance enabled')
+          }
+        }
+      } catch (err) {
+        console.warn('WASM status check failed, proceeding with fallbacks:', err.message)
+      }
+
       // Use hybrid token manager for protocol detection and routing
       return await this.hybridTokens.sendTokens(
         tokenId,
@@ -887,6 +905,22 @@ class MinimalXECWallet {
 
       if (!amount || typeof amount !== 'number' || amount <= 0) {
         throw new Error('Amount is required and must be a positive number')
+      }
+
+      // Verify WASM initialization status for token burning operations
+      try {
+        if (typeof window !== 'undefined') {
+          const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
+          const wasmStatus = wasmShim.isInitialized()
+
+          if (!wasmStatus) {
+            console.warn('WebAssembly not fully initialized - using JavaScript fallbacks for token burning')
+          } else {
+            console.log('WebAssembly enabled for optimized token burning performance')
+          }
+        }
+      } catch (err) {
+        console.warn('WASM status check failed for token burning, proceeding with fallbacks:', err.message)
       }
 
       // Use hybrid token manager for protocol detection and routing

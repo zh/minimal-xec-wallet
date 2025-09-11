@@ -91,6 +91,26 @@ function createCryptoWrapper(funcName, fallbackValue) {
   }
 }
 
+// Check if WASM is properly initialized
+function isInitialized() {
+  return wasmLoader && wasmLoader.isInitialized && wasmLoader.wasmModule
+}
+
+// Get WASM module (for direct access if needed)
+function getWasmModule() {
+  return wasmLoader && wasmLoader.isInitialized ? wasmLoader.wasmModule : null
+}
+
+// Check if specific crypto functions are available
+function hasCryptoFunction(funcName) {
+  try {
+    const module = getWasmModule()
+    return module && typeof module[funcName] === 'function'
+  } catch (err) {
+    return false
+  }
+}
+
 // ECC class wrapper
 class Ecc {
   constructor() {
@@ -281,7 +301,9 @@ module.exports = {
   publicKeyCryptoAlgoSupported: createCryptoWrapper('publicKeyCryptoAlgoSupported', false),
   publicKeyCryptoVerify: createCryptoWrapper('publicKeyCryptoVerify', false),
 
-  // Utility
-  isInitialized: () => wasmLoader && wasmLoader.isInitialized,
+  // Utility functions
+  isInitialized,
+  getWasmModule,
+  hasCryptoFunction,
   getLoader: () => wasmLoader
 }
