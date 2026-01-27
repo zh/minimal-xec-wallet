@@ -26,6 +26,12 @@ A minimalist eCash (XEC) wallet npm library for web applications with full SLP a
 - **Token Metadata**: Automatic fetching of token info (name, symbol, decimals)
 - **Hybrid Management**: Unified API for both SLP and ALP tokens
 
+### ✅ Avalanche Pre-Consensus (NEW)
+- **Instant Finality**: ~3 second transaction confirmation via Avalanche consensus
+- **Optional Finality Wait**: Choose between immediate broadcast or finalized confirmation
+- **Configurable Defaults**: Set wallet-wide finality preferences
+- **All Methods Supported**: sendXec, sendAllXec, sendOpReturn, sendETokens
+
 ### ✅ Advanced Features
 
 - **OP_RETURN**: Embed data in blockchain transactions
@@ -73,6 +79,12 @@ console.log(`Health Score: ${health.summary.healthPercentage}%`)
 const txid = await wallet.sendXec([
   { address: 'ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy', amountSats: 10000 }
 ])
+
+// Send XEC with Avalanche instant finality (~3 seconds)
+const txid = await wallet.sendXec(
+  [{ address: 'ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy', amountSats: 10000 }],
+  { awaitFinality: true }
+)
 
 // List all tokens (SLP + ALP)
 const tokens = await wallet.listETokens()
@@ -239,7 +251,7 @@ npm run docs
 
 ## 📊 Project Stats
 
-- **450+ Unit Tests** - Comprehensive coverage including analytics
+- **509+ Unit Tests** - Comprehensive coverage including analytics and Avalanche finality
 - **35+ Integration Tests** - Real network validation with analytics
 - **30+ Examples** - Working code for all use cases including analytics demos
 - **6 Token Protocols** - SLP Type 1, ALP Standard, auto-detection

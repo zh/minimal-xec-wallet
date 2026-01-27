@@ -8,6 +8,7 @@ Complete reference guide for all `@minimal-xec-wallet` library methods, organize
 - [Key Management](#key-management)
 - [Balance & UTXO Operations](#balance--utxo-operations)
 - [XEC Transactions](#xec-transactions)
+- [Avalanche Pre-Consensus (Instant Finality)](#avalanche-pre-consensus-instant-finality)
 - [eToken Operations](#etoken-operations)
 - [UTXO Analytics & Optimization](#utxo-analytics--optimization)
 - [Advanced Features](#advanced-features)
@@ -34,6 +35,13 @@ Creates a new wallet instance from mnemonic, WIF private key, or generates a new
 - `password` (string) - Password for encrypting/decrypting mnemonic
 - `enableDonations` (boolean) - Enable donation outputs (default: false)
 - `utxoAnalytics` (object) - Enable advanced UTXO analytics and optimization
+- `avalanche` (object) - Avalanche Pre-Consensus finality options
+
+**Avalanche Pre-Consensus Configuration:**
+
+- `avalanche.enabled` (boolean) - Enable Avalanche finality features (default: true)
+- `avalanche.defaultAwaitFinality` (boolean) - Wait for finality by default on all transactions (default: false)
+- `avalanche.finalityTimeout` (number) - Timeout for finality wait in milliseconds (default: 30000)
 
 **UTXO Analytics Configuration:**
 
@@ -54,9 +62,18 @@ const wallet = new MinimalXECWallet('abandon abandon abandon...')
 // Import from WIF
 const wallet = new MinimalXECWallet('L1234567890abcdef...')
 
+// With Avalanche instant finality
+const wallet = new MinimalXECWallet(mnemonic, {
+  avalanche: {
+    enabled: true,
+    defaultAwaitFinality: true,  // All transactions wait for finality
+    finalityTimeout: 30000       // 30 second timeout
+  }
+})
+
 // With options including analytics
-const wallet = new MinimalXECWallet(mnemonic, { 
-  fee: 2.0, 
+const wallet = new MinimalXECWallet(mnemonic, {
+  fee: 2.0,
   enableDonations: false,
   utxoAnalytics: {
     enabled: true,
@@ -295,19 +312,22 @@ const result = await wallet.optimize()
 
 ## XEC Transactions
 
-### async sendXec(outputs)
+### async sendXec(outputs, options)
 
 Sends XEC to one or multiple recipients.
 
 **Parameters:**
 - `outputs` (array) - Array of output objects with `address` and `amountSats` properties
+- `options` (object, optional) - Transaction options
+  - `awaitFinality` (boolean) - Wait for Avalanche finality (~3 sec). Defaults to `avalanche.defaultAwaitFinality`
+  - `finalityTimeout` (number) - Timeout in ms. Defaults to `avalanche.finalityTimeout`
 
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
 
 ```javascript
-// Send to single recipient
+// Send to single recipient (standard broadcast)
 const txid = await wallet.sendXec([
   { address: 'ecash:qp123...', amountSats: 10000 } // 100 XEC
 ])
@@ -317,24 +337,40 @@ const txid = await wallet.sendXec([
   { address: 'ecash:qp123...', amountSats: 5000 },  // 50 XEC
   { address: 'ecash:qr456...', amountSats: 3000 }   // 30 XEC
 ])
+
+// Send with Avalanche instant finality (~3 seconds)
+const txid = await wallet.sendXec(
+  [{ address: 'ecash:qp123...', amountSats: 10000 }],
+  { awaitFinality: true }
+)
 ```
 
-### async sendAllXec(toAddress)
+### async sendAllXec(toAddress, options)
 
 Sends all available XEC to a single address (empties the wallet).
 
 **Parameters:**
 - `toAddress` (string) - Recipient XEC address
+- `options` (object, optional) - Transaction options
+  - `awaitFinality` (boolean) - Wait for Avalanche finality (~3 sec)
+  - `finalityTimeout` (number) - Timeout in ms
 
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
 
 ```javascript
+// Standard broadcast
 const txid = await wallet.sendAllXec('ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy')
+
+// With Avalanche instant finality
+const txid = await wallet.sendAllXec(
+  'ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy',
+  { awaitFinality: true }
+)
 ```
 
-### async sendOpReturn(msg, prefix, xecOutput, satsPerByte)
+### async sendOpReturn(msg, prefix, xecOutput, satsPerByte, options)
 
 Sends an OP_RETURN transaction to embed data in the blockchain.
 
@@ -343,6 +379,9 @@ Sends an OP_RETURN transaction to embed data in the blockchain.
 - `prefix` (string, optional) - Hex prefix for the message (default: '6d02')
 - `xecOutput` (array, optional) - Additional XEC outputs (default: [])
 - `satsPerByte` (number, optional) - Fee rate (default: 1.0)
+- `options` (object, optional) - Transaction options
+  - `awaitFinality` (boolean) - Wait for Avalanche finality (~3 sec)
+  - `finalityTimeout` (number) - Timeout in ms
 
 **Returns:** `string` - Transaction ID (TXID)
 
@@ -358,6 +397,154 @@ const txid = await wallet.sendOpReturn(
   '6d03',
   [{ address: 'ecash:qp123...', amountSats: 1000 }],
   2.0
+)
+
+// With Avalanche instant finality
+const txid = await wallet.sendOpReturn(
+  'Important message',
+  '6d02',
+  [],
+  1.0,
+  { awaitFinality: true }
+)
+```
+
+---
+
+## Avalanche Pre-Consensus (Instant Finality)
+
+eCash's Avalanche Pre-Consensus provides instant transaction finality in approximately 3 seconds, compared to the traditional ~10 minute block confirmation time. This feature was activated on November 15, 2025.
+
+### Overview
+
+- **Traditional broadcast**: Transaction is broadcast and returns immediately. Confirmation takes ~10 minutes.
+- **Finalized broadcast**: Transaction is broadcast and waits for Avalanche consensus (~3 seconds). Returns when the transaction is final.
+
+### Configuration
+
+Configure Avalanche options in the wallet constructor:
+
+```javascript
+const wallet = new MinimalXECWallet(mnemonic, {
+  avalanche: {
+    enabled: true,                  // Enable Avalanche features (default: true)
+    defaultAwaitFinality: false,    // Wait for finality by default (default: false)
+    finalityTimeout: 30000          // Timeout in milliseconds (default: 30000)
+  }
+})
+```
+
+### async broadcast(inObj)
+
+Broadcasts a raw transaction hex to the network with optional Avalanche finality.
+
+**Parameters:**
+- `inObj` (object) - Object containing:
+  - `hex` (string, required) - Raw transaction hex
+  - `awaitFinality` (boolean, optional) - Wait for Avalanche finality. Defaults to `avalanche.defaultAwaitFinality`
+  - `timeout` (number, optional) - Finality timeout in ms. Defaults to `avalanche.finalityTimeout`
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+
+```javascript
+// Standard broadcast (returns immediately)
+const txid = await wallet.broadcast({ hex: '0100000001...' })
+
+// Broadcast with Avalanche finality (~3 seconds)
+const txid = await wallet.broadcast({
+  hex: '0100000001...',
+  awaitFinality: true
+})
+
+// With custom timeout
+const txid = await wallet.broadcast({
+  hex: '0100000001...',
+  awaitFinality: true,
+  timeout: 60000  // 60 second timeout
+})
+```
+
+### async broadcastAndFinalize(inObj)
+
+Convenience method that always waits for Avalanche finality. Use this when you need guaranteed instant confirmation.
+
+**Parameters:**
+- `inObj` (object) - Object containing:
+  - `hex` (string, required) - Raw transaction hex
+  - `timeout` (number, optional) - Finality timeout in ms. Defaults to `avalanche.finalityTimeout`
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Throws:** Error if Avalanche features are disabled in wallet configuration.
+
+**Example:**
+
+```javascript
+// Always waits for Avalanche finality
+const txid = await wallet.broadcastAndFinalize({ hex: '0100000001...' })
+
+// With custom timeout
+const txid = await wallet.broadcastAndFinalize({
+  hex: '0100000001...',
+  timeout: 45000
+})
+```
+
+### Transaction Methods with Finality
+
+All transaction methods support the `awaitFinality` option:
+
+```javascript
+// Send XEC with instant finality
+const txid = await wallet.sendXec(
+  [{ address: 'ecash:qp123...', amountSats: 10000 }],
+  { awaitFinality: true }
+)
+
+// Send all XEC with instant finality
+const txid = await wallet.sendAllXec(
+  'ecash:qp123...',
+  { awaitFinality: true }
+)
+
+// Send OP_RETURN with instant finality
+const txid = await wallet.sendOpReturn(
+  'message',
+  '6d02',
+  [],
+  1.0,
+  { awaitFinality: true }
+)
+
+// Send tokens with instant finality
+const txid = await wallet.sendETokens(
+  'tokenId...',
+  [{ address: 'ecash:qp123...', amount: 100 }],
+  1.2,
+  { awaitFinality: true }
+)
+```
+
+### Default Finality Behavior
+
+Set `defaultAwaitFinality: true` in the constructor to make all transactions wait for finality by default:
+
+```javascript
+const wallet = new MinimalXECWallet(mnemonic, {
+  avalanche: {
+    defaultAwaitFinality: true  // All transactions wait for finality
+  }
+})
+
+// Now all transactions automatically wait for finality
+const txid = await wallet.sendXec([{ address: 'ecash:qp123...', amountSats: 10000 }])
+
+// Override to skip finality wait
+const txid = await wallet.sendXec(
+  [{ address: 'ecash:qp123...', amountSats: 10000 }],
+  { awaitFinality: false }
 )
 ```
 
@@ -609,7 +796,7 @@ const tokenData = await wallet.getETokenData('abc123def456...')
 const tokenData = await wallet.getETokenData('abc123def456...', true)
 ```
 
-### async sendETokens(tokenId, outputs, satsPerByte)
+### async sendETokens(tokenId, outputs, satsPerByte, options)
 
 Sends eTokens to one or multiple recipients with automatic SLP/ALP protocol detection.
 
@@ -617,6 +804,9 @@ Sends eTokens to one or multiple recipients with automatic SLP/ALP protocol dete
 - `tokenId` (string) - Token ID to send
 - `outputs` (array) - Array of output objects with `address` and `amount` properties
 - `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
+- `options` (object, optional) - Transaction options
+  - `awaitFinality` (boolean) - Wait for Avalanche finality (~3 sec)
+  - `finalityTimeout` (number) - Timeout in ms
 
 **Returns:** `string` - Transaction ID (TXID)
 
@@ -637,6 +827,14 @@ const txid = await wallet.sendETokens('5e40dda12765d0b3819286f4bd50ec58a4bf8d7db
 const txid = await wallet.sendETokens('6887ab3749e0d5168a04838216895c95fce61f99237626b08d50db804fcb1801', [
   { address: 'ecash:qp123...', amount: 2 }    // Send 2 TGR
 ])
+
+// Send tokens with Avalanche instant finality
+const txid = await wallet.sendETokens(
+  '5e40dda12765d0b3819286f4bd50ec58a4bf8d7dbfd277152693ad9d34912135',
+  [{ address: 'ecash:qp123...', amount: 5 }],
+  1.2,
+  { awaitFinality: true }
+)
 ```
 
 ### async burnETokens(tokenId, amount, satsPerByte)
@@ -750,18 +948,41 @@ const pubKey = await wallet.getPubKey('ecash:qp123...')
 
 ### async broadcast(inObj)
 
-Broadcasts a raw transaction hex to the network.
+Broadcasts a raw transaction hex to the network with optional Avalanche finality.
 
 **Parameters:**
 - `inObj` (object) - Object containing:
-  - `hex` (string) - Raw transaction hex
+  - `hex` (string, required) - Raw transaction hex
+  - `awaitFinality` (boolean, optional) - Wait for Avalanche finality (~3 sec)
+  - `timeout` (number, optional) - Finality timeout in ms
 
 **Returns:** `string` - Transaction ID (TXID)
 
 **Example:**
 
 ```javascript
+// Standard broadcast
 const txid = await wallet.broadcast({ hex: '0100000001...' })
+
+// With Avalanche instant finality
+const txid = await wallet.broadcast({ hex: '0100000001...', awaitFinality: true })
+```
+
+### async broadcastAndFinalize(inObj)
+
+Broadcasts a raw transaction and always waits for Avalanche finality.
+
+**Parameters:**
+- `inObj` (object) - Object containing:
+  - `hex` (string, required) - Raw transaction hex
+  - `timeout` (number, optional) - Finality timeout in ms
+
+**Returns:** `string` - Transaction ID (TXID)
+
+**Example:**
+
+```javascript
+const txid = await wallet.broadcastAndFinalize({ hex: '0100000001...' })
 ```
 
 ### async utxoIsValid(utxo)
@@ -863,6 +1084,9 @@ try {
 - **Chronik Endpoints:** Multiple fallback endpoints for reliability
 - **Donations:** Disabled by default for privacy
 - **Analytics:** Disabled by default for performance
+- **Avalanche Enabled:** True by default
+- **Avalanche Default Await Finality:** False by default (opt-in)
+- **Avalanche Finality Timeout:** 30000ms (30 seconds)
 
 ### Analytics Configuration
 
