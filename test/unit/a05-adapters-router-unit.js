@@ -402,18 +402,20 @@ describe('#adapters/router.js - Chronik API Router', () => {
       const result = await uut.sendTxAndFinalize(txHex)
 
       assert.equal(result, 'finalized_txid_123')
-      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, 30000))
+      // Default timeout 30000ms is converted to 30 seconds for Chronik API
+      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, 30))
     })
 
     it('should accept custom timeout', async () => {
       const txHex = mockWallet.mockTransactionHex
-      const customTimeout = 60000
+      const customTimeout = 60000 // 60000ms = 60 seconds
 
       mockChronik.broadcastAndFinalizeTx = sandbox.stub().resolves({ txid: 'finalized_txid_123' })
 
       await uut.sendTxAndFinalize(txHex, customTimeout)
 
-      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, customTimeout))
+      // 60000ms is converted to 60 seconds for Chronik API
+      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, 60))
     })
 
     it('should reject invalid transaction hex', async () => {
