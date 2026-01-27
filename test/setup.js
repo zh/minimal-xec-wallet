@@ -99,6 +99,13 @@ function MockChronikClient (url) {
 
   this.broadcastTx = sinon.stub().resolves('mock_txid_123')
 
+  // Avalanche Pre-Consensus finality methods (chronik-client v4.1.0+)
+  this.broadcastAndFinalizeTx = sinon.stub().resolves({ txid: 'mock_finalized_txid_123' })
+  this.broadcastAndFinalizeTxs = sinon.stub().resolves([
+    { txid: 'mock_finalized_txid_1' },
+    { txid: 'mock_finalized_txid_2' }
+  ])
+
   this.ws = sinon.stub().returns({
     waitForOpen: sinon.stub().resolves(),
     subscribe: sinon.stub(),
@@ -139,6 +146,11 @@ MockChronikClient.useStrategy = sinon.stub().callsFake(async (strategy, urls) =>
     }
   })
   mockInstance.broadcastTx = sinon.stub().resolves('mock_txid_123')
+  mockInstance.broadcastAndFinalizeTx = sinon.stub().resolves({ txid: 'mock_finalized_txid_123' })
+  mockInstance.broadcastAndFinalizeTxs = sinon.stub().resolves([
+    { txid: 'mock_finalized_txid_1' },
+    { txid: 'mock_finalized_txid_2' }
+  ])
   return mockInstance
 })
 

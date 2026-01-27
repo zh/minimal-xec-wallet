@@ -393,6 +393,88 @@ describe('#adapters/router.js - Chronik API Router', () => {
     })
   })
 
+  describe('#sendTxAndFinalize - Avalanche Pre-Consensus', () => {
+    it('should broadcast and wait for Avalanche finality', async () => {
+      const txHex = mockWallet.mockTransactionHex
+
+      mockChronik.broadcastAndFinalizeTx = sandbox.stub().resolves({ txid: 'finalized_txid_123' })
+
+      const result = await uut.sendTxAndFinalize(txHex)
+
+      assert.equal(result, 'finalized_txid_123')
+      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, 30000))
+    })
+
+    it('should accept custom timeout', async () => {
+      const txHex = mockWallet.mockTransactionHex
+      const customTimeout = 60000
+
+      mockChronik.broadcastAndFinalizeTx = sandbox.stub().resolves({ txid: 'finalized_txid_123' })
+
+      await uut.sendTxAndFinalize(txHex, customTimeout)
+
+      assert.isTrue(mockChronik.broadcastAndFinalizeTx.calledWith(txHex, customTimeout))
+    })
+
+    it('should reject invalid transaction hex', async () => {
+      try {
+        await uut.sendTxAndFinalize(null)
+        assert.fail('Should throw error for invalid hex')
+      } catch (err) {
+        assert.include(err.message, 'Invalid transaction hex')
+      }
+    })
+
+    it('should handle finality timeout errors', async () => {
+      const txHex = mockWallet.mockTransactionHex
+
+      mockChronik.broadcastAndFinalizeTx = sandbox.stub().rejects(new Error('Finality timeout'))
+
+      try {
+        await uut.sendTxAndFinalize(txHex)
+        assert.fail('Should throw finality error')
+      } catch (err) {
+        assert.include(err.message, 'Finality timeout')
+      }
+    })
+  })
+
+  describe('#sendTxsAndFinalize - Batch Avalanche Finality', () => {
+    it('should broadcast multiple transactions and wait for finality', async () => {
+      const hexArray = [mockWallet.mockTransactionHex, mockWallet.mockTransactionHex]
+
+      mockChronik.broadcastAndFinalizeTxs = sandbox.stub().resolves([
+        { txid: 'finalized_txid_1' },
+        { txid: 'finalized_txid_2' }
+      ])
+
+      const result = await uut.sendTxsAndFinalize(hexArray)
+
+      assert.isArray(result)
+      assert.equal(result.length, 2)
+      assert.equal(result[0], 'finalized_txid_1')
+      assert.equal(result[1], 'finalized_txid_2')
+    })
+
+    it('should reject empty array', async () => {
+      try {
+        await uut.sendTxsAndFinalize([])
+        assert.fail('Should throw error for empty array')
+      } catch (err) {
+        assert.include(err.message, 'Invalid transaction hex array')
+      }
+    })
+
+    it('should reject array with invalid hex', async () => {
+      try {
+        await uut.sendTxsAndFinalize(['valid_hex', null])
+        assert.fail('Should throw error for invalid hex in array')
+      } catch (err) {
+        assert.include(err.message, 'Invalid transaction hex')
+      }
+    })
+  })
+
   // TODO: Phase 2 - eToken-related adapter tests will be added
   describe('#eToken operations - Phase 2', () => {
     it('getETokenData should be ready for implementation', () => {
