@@ -50,6 +50,14 @@ class MinimalXECWallet {
 
     // Donation setting (defaults to false for security and user consent)
     this.enableDonations = this.advancedOptions.enableDonations || false
+
+    // Avalanche Pre-Consensus options (added in v2.1.0)
+    // These control the new instant finality feature from chronik-client v4.1.0
+    this.avalancheOptions = {
+      enabled: advancedOptions.avalanche?.enabled ?? true,
+      defaultAwaitFinality: advancedOptions.avalanche?.defaultAwaitFinality ?? false,
+      finalityTimeout: advancedOptions.avalanche?.finalityTimeout ?? 30000
+    }
     // END Handle advanced options.
 
     // Encapsulate the external libraries.
@@ -115,6 +123,7 @@ class MinimalXECWallet {
     this.getETokenBalance = this.getETokenBalance.bind(this) // Phase 2
     this.getPubKey = this.getPubKey.bind(this)
     this.broadcast = this.broadcast.bind(this)
+    this.broadcastAndFinalize = this.broadcastAndFinalize.bind(this)
     this.cid2json = this.cid2json.bind(this)
     this._validateAddress = this._validateAddress.bind(this)
     this._sanitizeError = this._sanitizeError.bind(this)
@@ -795,16 +804,52 @@ class MinimalXECWallet {
   }
 
   // Broadcast transaction hex
+  // Options:
+  //   - hex: Raw transaction hex (required)
+  //   - awaitFinality: If true, wait for Avalanche finality (~3 sec). Default uses avalancheOptions.defaultAwaitFinality
+  //   - timeout: Finality timeout in ms (default: avalancheOptions.finalityTimeout or 30000)
   async broadcast (inObj = {}) {
     try {
-      const { hex } = inObj
+      const { hex, awaitFinality, timeout } = inObj
       if (!hex) {
         throw new Error('Transaction hex is required')
+      }
+
+      // Determine if we should await finality
+      const shouldAwaitFinality = awaitFinality ?? this.avalancheOptions.defaultAwaitFinality
+      const finalityTimeout = timeout ?? this.avalancheOptions.finalityTimeout
+
+      // Use finalized broadcast if Avalanche is enabled and awaitFinality is requested
+      if (this.avalancheOptions.enabled && shouldAwaitFinality) {
+        return await this.ar.sendTxAndFinalize(hex, finalityTimeout)
       }
 
       return await this.ar.sendTx(hex)
     } catch (err) {
       throw this._sanitizeError(err, 'Transaction broadcast failed')
+    }
+  }
+
+  // Broadcast transaction hex and wait for Avalanche finality
+  // This is a convenience method that always waits for finality (~3 seconds)
+  // Options:
+  //   - hex: Raw transaction hex (required)
+  //   - timeout: Finality timeout in ms (default: avalancheOptions.finalityTimeout or 30000)
+  async broadcastAndFinalize (inObj = {}) {
+    try {
+      const { hex, timeout } = inObj
+      if (!hex) {
+        throw new Error('Transaction hex is required')
+      }
+
+      if (!this.avalancheOptions.enabled) {
+        throw new Error('Avalanche features are disabled. Enable them in constructor options.')
+      }
+
+      const finalityTimeout = timeout ?? this.avalancheOptions.finalityTimeout
+      return await this.ar.sendTxAndFinalize(hex, finalityTimeout)
+    } catch (err) {
+      throw this._sanitizeError(err, 'Finalized broadcast failed')
     }
   }
 
