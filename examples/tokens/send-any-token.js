@@ -8,24 +8,32 @@ const WalletHelper = require('../utils/wallet-helper')
 
 // Get command line arguments
 const args = process.argv.slice(2)
+const useFinality = args.includes('--finality')
+const filteredArgs = args.filter(arg => arg !== '--finality')
 
 function showUsage () {
-  console.log('Usage: node send-any-token.js <token_ticker_or_id> <recipient> <amount>')
+  console.log('Usage: node send-any-token.js <token_ticker_or_id> <recipient> <amount> [--finality]')
   console.log('')
   console.log('Examples:')
   console.log('  node send-any-token.js FLCT ecash:qpcskwl402g5stqxy26js0j3mx5v54xqtssp0v7kkr 2')
   console.log('  node send-any-token.js TGR etoken:qpcskwl402g5stqxy26js0j3mx5v54xqtssp0v7kkr 3')
   console.log('  node send-any-token.js 5e40dda12765...912135 ecash:qpcskwl402g5stqxy26js0j3mx5v54xqtssp0v7kkr 1')
+  console.log('  node send-any-token.js FLCT ecash:qp... 2 --finality  # Wait for Avalanche finality (~3 sec)')
   console.log('')
   console.log('Parameters:')
   console.log('  token_ticker_or_id: Token ticker (FLCT, TGR) or full token ID')
   console.log('  recipient: eCash address (ecash: or etoken: format)')
   console.log('  amount: Amount to send (in display units)')
   console.log('')
+  console.log('Options:')
+  console.log('  --finality: Wait for Avalanche Pre-Consensus finality (~3 seconds)')
+  console.log('              Without this flag, confirmation takes ~10 minutes (next block)')
+  console.log('')
   console.log('✨ Features:')
   console.log('   • Protocol (SLP/ALP) detected automatically')
   console.log('   • Uses main wallet API for consistency')
   console.log('   • Unified error handling and validation')
+  console.log('   • Optional Avalanche Pre-Consensus instant finality')
 }
 
 async function sendAnyToken () {
@@ -33,15 +41,15 @@ async function sendAnyToken () {
     console.log('🚀 Sending Token (Main Wallet API)...\n')
 
     // Check arguments
-    if (args.length < 3) {
+    if (filteredArgs.length < 3) {
       console.log('❌ Missing required arguments')
       showUsage()
       return
     }
 
-    const tokenInput = args[0]
-    const recipient = args[1]
-    const amount = parseFloat(args[2])
+    const tokenInput = filteredArgs[0]
+    const recipient = filteredArgs[1]
+    const amount = parseFloat(filteredArgs[2])
 
     // Validate amount
     if (isNaN(amount) || amount <= 0) {
@@ -156,6 +164,7 @@ async function sendAnyToken () {
     console.log(`Amount: ${amount} ${selectedToken.ticker}`)
     console.log(`Remaining: ${(selectedToken.balance.display - amount).toFixed(selectedToken.decimals)} ${selectedToken.ticker}`)
     console.log('Estimated Fee: ~0.01 XEC')
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (~10 min block confirmation)'}`)
 
     // Confirm transaction
     const readline = require('readline')
@@ -192,13 +201,18 @@ async function sendAnyToken () {
     // - Route to appropriate handler
     // - Handle UTXO selection
     // - Build and broadcast transaction
+    const txOptions = useFinality ? { awaitFinality: true } : {}
     const txid = await wallet.sendETokens(
       selectedToken.tokenId,
       outputs,
-      1.2 // sats per byte fee rate
+      1.2, // sats per byte fee rate
+      txOptions
     )
 
     console.log('\n✅ Token transaction sent successfully!')
+    if (useFinality) {
+      console.log('⚡ Avalanche Finality: CONFIRMED (instant ~3 sec)')
+    }
     console.log('═'.repeat(60))
     console.log(`Transaction ID: ${txid}`)
     console.log(`Protocol: ${selectedToken.protocol}`)
@@ -215,6 +229,15 @@ async function sendAnyToken () {
     console.log(`   XEC: ~${(xecBalance - 0.01).toFixed(2)} XEC (minus fees)`)
 
     console.log('\n💡 Next Steps:')
+    if (useFinality) {
+      console.log('   • Transaction is FINAL - confirmed via Avalanche Pre-Consensus')
+      console.log('   • No need to wait for block confirmation')
+      console.log('   • Safe to consider the transaction complete')
+    } else {
+      console.log('   • The transaction is now being processed by the network')
+      console.log('   • Confirmation usually takes 1-10 minutes')
+      console.log('   • Use --finality flag for instant (~3 sec) Avalanche confirmation')
+    }
     console.log('   • Check updated balance: node examples/tokens/list-all-tokens.js')
     console.log('   • Send more tokens: node examples/tokens/send-any-token.js')
     console.log('   • Get token info: node examples/tokens/get-token-info.js')

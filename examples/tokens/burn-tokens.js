@@ -8,19 +8,26 @@ const WalletHelper = require('../utils/wallet-helper')
 
 // Get command line arguments
 const args = process.argv.slice(2)
+const useFinality = args.includes('--finality')
+const filteredArgs = args.filter(arg => arg !== '--finality')
 
 function showUsage () {
-  console.log('Usage: node burn-tokens.js <token_ticker_or_id> [amount]')
+  console.log('Usage: node burn-tokens.js <token_ticker_or_id> [amount] [--finality]')
   console.log('')
   console.log('Examples:')
   console.log('  node burn-tokens.js FLCT 2          # Burn 2 FLCT tokens')
   console.log('  node burn-tokens.js TGR 1.5         # Burn 1.5 TGR tokens')
   console.log('  node burn-tokens.js FLCT all        # Burn all FLCT tokens')
   console.log('  node burn-tokens.js 5e40dda12765...912135 3  # Burn by token ID')
+  console.log('  node burn-tokens.js FLCT 2 --finality  # Burn with Avalanche finality (~3 sec)')
   console.log('')
   console.log('Parameters:')
   console.log('  token_ticker_or_id: Token ticker (FLCT, TGR) or full token ID')
   console.log('  amount: Amount to burn, or "all" to burn everything (optional)')
+  console.log('')
+  console.log('Options:')
+  console.log('  --finality: Wait for Avalanche Pre-Consensus finality (~3 seconds)')
+  console.log('              Without this flag, confirmation takes ~10 minutes (next block)')
   console.log('')
   console.log('⚠️  WARNING: Token burning is PERMANENT and IRREVERSIBLE!')
   console.log('✨ Features:')
@@ -28,6 +35,7 @@ function showUsage () {
   console.log('   • Multiple safety confirmations')
   console.log('   • Burn specific amounts or all tokens')
   console.log('   • Uses main wallet API for consistency')
+  console.log('   • Optional Avalanche Pre-Consensus instant finality')
 }
 
 async function burnTokens () {
@@ -35,14 +43,14 @@ async function burnTokens () {
     console.log('🔥 Burn Tokens (Main Wallet API)...\n')
 
     // Check arguments
-    if (args.length < 1) {
+    if (filteredArgs.length < 1) {
       console.log('❌ Missing required arguments')
       showUsage()
       return
     }
 
-    const tokenInput = args[0]
-    const amountInput = args[1] || 'prompt'
+    const tokenInput = filteredArgs[0]
+    const amountInput = filteredArgs[1] || 'prompt'
     const burnAll = amountInput === 'all'
 
     // Load wallet
@@ -176,6 +184,7 @@ async function burnTokens () {
     console.log(`Amount to burn: ${amountToBurn} ${selectedToken.ticker}`)
     console.log(`Remaining after burn: ${(selectedToken.balance.display - amountToBurn).toFixed(selectedToken.decimals)} ${selectedToken.ticker}`)
     console.log('Estimated Fee: ~0.01 XEC')
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (~10 min block confirmation)'}`)
     console.log('')
     console.log('⚠️  WARNING: THIS ACTION IS PERMANENT AND IRREVERSIBLE!')
     console.log('    Burned tokens are destroyed forever and cannot be recovered.')
@@ -224,14 +233,18 @@ async function burnTokens () {
     // - Handle UTXO selection and change
     // - Build and broadcast burn transaction
     let txid
+    const txOptions = useFinality ? { awaitFinality: true } : {}
 
     if (burnAll) {
-      txid = await wallet.burnAllETokens(selectedToken.tokenId, 1.2)
+      txid = await wallet.burnAllETokens(selectedToken.tokenId, 1.2, txOptions)
     } else {
-      txid = await wallet.burnETokens(selectedToken.tokenId, amountToBurn, 1.2)
+      txid = await wallet.burnETokens(selectedToken.tokenId, amountToBurn, 1.2, txOptions)
     }
 
     console.log('\n✅ Token burn transaction sent successfully!')
+    if (useFinality) {
+      console.log('⚡ Avalanche Finality: CONFIRMED (instant ~3 sec)')
+    }
     console.log('═'.repeat(60))
     console.log(`Transaction ID: ${txid}`)
     console.log(`Protocol: ${selectedToken.protocol}`)
@@ -248,6 +261,15 @@ async function burnTokens () {
     console.log(`   XEC: ~${(xecBalance - 0.01).toFixed(2)} XEC (minus fees)`)
 
     console.log('\n💡 Next Steps:')
+    if (useFinality) {
+      console.log('   • Transaction is FINAL - confirmed via Avalanche Pre-Consensus')
+      console.log('   • No need to wait for block confirmation')
+      console.log('   • The burn is permanently confirmed')
+    } else {
+      console.log('   • The burn transaction is now being processed by the network')
+      console.log('   • Confirmation usually takes 1-10 minutes')
+      console.log('   • Use --finality flag for instant (~3 sec) Avalanche confirmation')
+    }
     console.log('   • Check updated balance: node examples/tokens/list-all-tokens.js')
     console.log('   • Send tokens: node examples/tokens/send-any-token.js')
     console.log('   • Get token info: node examples/tokens/get-token-info.js')
