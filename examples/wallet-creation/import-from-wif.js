@@ -80,6 +80,15 @@ async function importFromWif () {
     }
 
     // Create wallet from WIF/hex private key
+    // Optional: Enable Avalanche Pre-Consensus features for instant finality (~3 sec)
+    // const advancedOptions = {
+    //   avalanche: {
+    //     enabled: true,                  // Enable Avalanche features
+    //     defaultAwaitFinality: false,    // Wait for finality by default on all transactions
+    //     finalityTimeout: 30000          // Timeout in milliseconds (default: 30 seconds)
+    //   }
+    // }
+    // const wallet = new MinimalXECWallet(wif, advancedOptions)
     const wallet = new MinimalXECWallet(wif)
 
     // Wait for wallet creation to complete
