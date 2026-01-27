@@ -593,7 +593,9 @@ class MinimalXECWallet {
   }
 
   // Send XEC. Returns a promise that resolves into a TXID.
-  async sendXec (outputs) {
+  // Options:
+  //   - awaitFinality: If true, wait for Avalanche finality (~3 sec)
+  async sendXec (outputs, options = {}) {
     try {
       // Wait for wallet to be initialized
       await this.walletInfoPromise
@@ -611,6 +613,12 @@ class MinimalXECWallet {
         throw new Error(`No pure XEC UTXOs available for transaction. All ${tokenUtxoCount} UTXOs contain tokens. To send XEC, first run wallet.optimize() to consolidate UTXOs and create pure XEC UTXOs, or use sendETokens() if you want to send tokens instead.`)
       }
 
+      // Determine finality options
+      const finalityOptions = {
+        awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
+        finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
+      }
+
       return await this.sendXecLib.sendXec(
         outputs,
         {
@@ -621,7 +629,8 @@ class MinimalXECWallet {
           privateKey: this.walletInfo.privateKey,
           publicKey: this.walletInfo.publicKey
         },
-        xecOnlyUtxos
+        xecOnlyUtxos,
+        finalityOptions
       )
     } catch (err) {
       throw this._sanitizeError(err, 'XEC send failed')
@@ -629,7 +638,9 @@ class MinimalXECWallet {
   }
 
   // Send eTokens. Returns a promise that resolves into a TXID.
-  async sendETokens (tokenId, outputs, satsPerByte = this.fee) {
+  // Options:
+  //   - awaitFinality: If true, wait for Avalanche finality (~3 sec)
+  async sendETokens (tokenId, outputs, satsPerByte = this.fee, options = {}) {
     try {
       // Wait for wallet to be initialized
       await this.walletInfoPromise
@@ -670,6 +681,12 @@ class MinimalXECWallet {
         console.warn('WASM status check failed, proceeding with fallbacks:', err.message)
       }
 
+      // Determine finality options
+      const finalityOptions = {
+        awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
+        finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
+      }
+
       // Use hybrid token manager for protocol detection and routing
       return await this.hybridTokens.sendTokens(
         tokenId,
@@ -683,7 +700,8 @@ class MinimalXECWallet {
           publicKey: this.walletInfo.publicKey
         },
         this.utxos.utxoStore.xecUtxos,
-        satsPerByte
+        satsPerByte,
+        finalityOptions
       )
     } catch (err) {
       throw this._sanitizeError(err, 'eToken send failed')
@@ -691,12 +709,20 @@ class MinimalXECWallet {
   }
 
   // Send all XEC to an address
-  async sendAllXec (toAddress) {
+  // Options:
+  //   - awaitFinality: If true, wait for Avalanche finality (~3 sec)
+  async sendAllXec (toAddress, options = {}) {
     try {
       await this.walletInfoPromise
 
       if (!this.isInitialized) {
         await this.initialize()
+      }
+
+      // Determine finality options
+      const finalityOptions = {
+        awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
+        finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
       }
 
       return await this.sendXecLib.sendAllXec(
@@ -709,7 +735,8 @@ class MinimalXECWallet {
           privateKey: this.walletInfo.privateKey,
           publicKey: this.walletInfo.publicKey
         },
-        this.utxos.utxoStore.xecUtxos
+        this.utxos.utxoStore.xecUtxos,
+        finalityOptions
       )
     } catch (err) {
       console.error('Error in sendAllXec():', err.message)
@@ -718,7 +745,9 @@ class MinimalXECWallet {
   }
 
   // Send OP_RETURN transaction
-  async sendOpReturn (msg = '', prefix = '6d02', xecOutput = [], satsPerByte = 1.0) {
+  // Options (5th parameter):
+  //   - awaitFinality: If true, wait for Avalanche finality (~3 sec)
+  async sendOpReturn (msg = '', prefix = '6d02', xecOutput = [], satsPerByte = 1.0, options = {}) {
     try {
       await this.walletInfoPromise
 
@@ -735,13 +764,20 @@ class MinimalXECWallet {
         throw new Error(`No pure XEC UTXOs available for OP_RETURN transaction. All ${tokenUtxoCount} UTXOs contain tokens. To send OP_RETURN, first run wallet.optimize() to consolidate UTXOs and create pure XEC UTXOs.`)
       }
 
+      // Determine finality options
+      const finalityOptions = {
+        awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
+        finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
+      }
+
       return await this.opReturn.sendOpReturn(
         this.walletInfo,
         xecOnlyUtxos,
         msg,
         prefix,
         xecOutput,
-        satsPerByte
+        satsPerByte,
+        finalityOptions
       )
     } catch (err) {
       console.error('Error in sendOpReturn():', err.message)
