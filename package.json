@@ -11,6 +11,7 @@
   "files": [
     "dist/",
     "examples/",
+    "!examples/wallet.json*",
     "lib/",
     "index.js"
   ],
