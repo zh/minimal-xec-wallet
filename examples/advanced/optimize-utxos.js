@@ -9,16 +9,19 @@ const WalletHelper = require('../utils/wallet-helper')
 // Get command line arguments
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run') || args.includes('-n')
+const useFinality = args.includes('--finality') || args.includes('-f')
 
 function showUsage () {
-  console.log('Usage: node optimize-utxos.js [--dry-run]')
+  console.log('Usage: node optimize-utxos.js [--dry-run] [--finality]')
   console.log('')
   console.log('Options:')
   console.log('  --dry-run, -n    Show optimization plan without executing')
+  console.log('  --finality, -f   Wait for Avalanche finality (~3 sec instant confirmation)')
   console.log('')
   console.log('Examples:')
   console.log('  node optimize-utxos.js --dry-run    # Preview optimization')
   console.log('  node optimize-utxos.js              # Execute optimization')
+  console.log('  node optimize-utxos.js --finality   # Execute with Avalanche finality')
   console.log('')
   console.log('Purpose:')
   console.log('  • Consolidates multiple small UTXOs into fewer larger ones')
@@ -116,6 +119,7 @@ async function optimizeUtxos () {
     console.log('═'.repeat(60))
     console.log(`Address: ${walletData.xecAddress}`)
     console.log(`Balance: ${balance.toLocaleString()} XEC`)
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (standard confirmation)'}`)
     console.log('═'.repeat(60))
 
     // Analyze current UTXO state
@@ -187,8 +191,14 @@ async function optimizeUtxos () {
 
     console.log('\n🚀 Starting UTXO optimization...')
 
+    // Build transaction options
+    const txOptions = {}
+    if (useFinality) {
+      txOptions.awaitFinality = true
+    }
+
     // Run the optimization
-    const result = await wallet.optimize(false) // false = not dry run
+    const result = await wallet.optimize(false, txOptions) // false = not dry run
 
     if (result && result.txid) {
       console.log('\n✅ UTXO optimization completed successfully!')
@@ -196,6 +206,11 @@ async function optimizeUtxos () {
       console.log(`Transaction ID: ${result.txid}`)
       console.log(`UTXOs consolidated: ${result.utxosConsolidated || 'Multiple'}`)
       console.log(`Fee paid: ${result.fee ? (result.fee / 100).toLocaleString() + ' XEC' : 'Calculated automatically'}`)
+      if (useFinality) {
+        console.log('Finality: CONFIRMED (Avalanche Pre-Consensus)')
+      } else {
+        console.log('Finality: Pending (~10 min for block confirmation)')
+      }
       console.log('═'.repeat(60))
 
       // Show updated state

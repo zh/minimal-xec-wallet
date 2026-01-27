@@ -8,18 +8,23 @@ const WalletHelper = require('../utils/wallet-helper')
 
 // Get command line arguments
 const args = process.argv.slice(2)
+const useFinality = args.includes('--finality') || args.includes('-f')
 
 function showUsage () {
-  console.log('Usage: node send-op-return.js <message> [xec_amount]')
+  console.log('Usage: node send-op-return.js <message> [xec_amount] [--finality]')
   console.log('')
   console.log('Examples:')
   console.log('  node send-op-return.js "Hello XEC blockchain!"')
   console.log('  node send-op-return.js "Document hash: abc123..." 5.46')
   console.log('  node send-op-return.js "Timestamp: 2024-01-01" 0')
+  console.log('  node send-op-return.js "Hello XEC!" 0 --finality')
   console.log('')
   console.log('Parameters:')
   console.log('  message: Text to embed in the blockchain (max 220 bytes)')
   console.log('  xec_amount: Optional XEC to send to yourself (default: 0)')
+  console.log('')
+  console.log('Options:')
+  console.log('  --finality, -f   Wait for Avalanche finality (~3 sec instant confirmation)')
   console.log('')
   console.log('Note: OP_RETURN data is permanent and publicly visible!')
 }
@@ -82,6 +87,7 @@ async function sendOpReturn () {
     console.log(`Message Length: ${message.length} bytes`)
     console.log(`XEC Amount: ${xecAmount.toLocaleString()} XEC`)
     console.log(`Current Balance: ${balance.toLocaleString()} XEC`)
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (standard confirmation)'}`)
     console.log('═'.repeat(60))
 
     // Check balance
@@ -141,12 +147,19 @@ async function sendOpReturn () {
       }]
     }
 
+    // Build transaction options
+    const txOptions = {}
+    if (useFinality) {
+      txOptions.awaitFinality = true
+    }
+
     // Send OP_RETURN transaction
     const txid = await wallet.sendOpReturn(
       message, // message
       '6d02', // prefix (memo protocol)
       xecOutputs, // optional XEC outputs
-      1.2 // sats per byte fee rate
+      1.2, // sats per byte fee rate
+      txOptions // transaction options (awaitFinality)
     )
 
     console.log('\n✅ OP_RETURN transaction sent successfully!')
@@ -155,6 +168,11 @@ async function sendOpReturn () {
     console.log(`Message: "${message}"`)
     console.log(`Message Hex: ${messageHex}`)
     console.log(`XEC Amount: ${xecAmount.toLocaleString()} XEC`)
+    if (useFinality) {
+      console.log('Finality: CONFIRMED (Avalanche Pre-Consensus)')
+    } else {
+      console.log('Finality: Pending (~10 min for block confirmation)')
+    }
     console.log('═'.repeat(60))
 
     // Get updated balance
