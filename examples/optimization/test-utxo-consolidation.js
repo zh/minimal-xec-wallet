@@ -1,14 +1,23 @@
 /*
   Test UTXO consolidation functionality with real wallet
   Demonstrates dry run analysis and actual consolidation capabilities
+  Supports Avalanche Pre-Consensus finality for instant confirmation
 */
 
 const MinimalXECWallet = require('../../index')
 const WalletHelper = require('../utils/wallet-helper')
 
+// Parse command line arguments
+const args = process.argv.slice(2)
+const useFinality = args.includes('--finality')
+
 async function testUtxoConsolidation () {
   try {
     console.log('🔧 Testing UTXO Consolidation Functionality...\n')
+    if (useFinality) {
+      console.log('⚡ Avalanche Pre-Consensus finality: ENABLED')
+      console.log('   Consolidation transactions will wait for instant confirmation (~3 sec)\n')
+    }
 
     // Load wallet
     const walletData = WalletHelper.loadWallet()
@@ -66,11 +75,14 @@ async function testUtxoConsolidation () {
 
     // Perform dry run optimization analysis
     console.log('🔍 Dry Run Optimization Analysis:')
-    const dryRunResult = await wallet.optimize(true) // Dry run mode
+    // Build transaction options with optional Avalanche finality
+    const txOptions = useFinality ? { awaitFinality: true } : {}
+    const dryRunResult = await wallet.optimize(true, txOptions) // Dry run mode with options
 
     console.log(`   Success: ${dryRunResult.success}`)
     console.log(`   Analysis: ${dryRunResult.message}`)
     console.log(`   Planned transactions: ${dryRunResult.transactions.length}`)
+    console.log(`   Avalanche Finality: ${useFinality ? 'ENABLED' : 'DISABLED'}`)
 
     if (dryRunResult.analysis) {
       console.log('\n   📋 Detailed Analysis:')
@@ -116,11 +128,15 @@ async function testUtxoConsolidation () {
       console.log('   To execute live consolidation, run:')
       console.log('   const result = await wallet.optimize(false) // Live mode')
       console.log('')
+      console.log('   To execute with Avalanche finality (instant ~3 sec confirmation):')
+      console.log('   const result = await wallet.optimize(false, { awaitFinality: true })')
+      console.log('')
       console.log('🔧 Test Parameters:')
       console.log(`   Fee rate: ${walletData.fee || '1.2'} sat/byte`)
       console.log('   Dust limit: 200 satoshis')
       console.log('   Max inputs per tx: 200')
       console.log('   Consolidation threshold: 100,000 satoshis')
+      console.log(`   Avalanche Finality: ${useFinality ? 'ENABLED' : 'DISABLED (use --finality to enable)'}`)
     } else {
       console.log('ℹ️  Consolidation Status:')
       console.log('   No consolidation needed at this time.')
@@ -147,6 +163,12 @@ async function testUtxoConsolidation () {
     console.log('   ✅ Dry run analysis completed successfully')
     console.log('   ✅ Cost-benefit analysis functioning properly')
     console.log('   ✅ Smart consolidation recommendations working')
+    console.log('   ✅ Avalanche finality option supported')
+    console.log('')
+    console.log('⚡ Avalanche Pre-Consensus Options:')
+    console.log('   • Run with --finality flag for instant confirmation')
+    console.log('   • Example: node test-utxo-consolidation.js --finality')
+    console.log('   • Confirmation time: ~3 seconds vs ~10 minutes')
   } catch (err) {
     console.error('\n❌ UTXO consolidation test failed:', err.message)
 

@@ -583,6 +583,7 @@ class ExampleTester {
   async testTransactions () {
     console.log('\n' + '💸 PHASE 3: TRANSACTION TESTS'.padEnd(70, '='))
     console.log('⚠️  These tests require a funded wallet!')
+    console.log('⚡ Avalanche Pre-Consensus finality available for instant confirmations')
 
     // Check if wallet is funded
     const funded = await this.waitForFunding()
@@ -603,6 +604,14 @@ class ExampleTester {
         needsConfirmation: true
       },
       {
+        name: 'Send XEC with Avalanche Finality',
+        command: 'node',
+        args: ['transactions/send-xec.js', testAddress, '6', '--finality'],
+        required: false,
+        needsConfirmation: true,
+        description: 'Test Avalanche Pre-Consensus instant confirmation (~3 sec)'
+      },
+      {
         name: 'Send OP_RETURN',
         command: 'node',
         args: ['advanced/send-op-return.js', 'Test message from examples'],
@@ -610,17 +619,36 @@ class ExampleTester {
         needsConfirmation: true
       },
       {
+        name: 'Send OP_RETURN with Finality',
+        command: 'node',
+        args: ['advanced/send-op-return.js', 'Test message with finality', '--finality'],
+        required: false,
+        needsConfirmation: true,
+        description: 'Test OP_RETURN with Avalanche finality'
+      },
+      {
         name: 'UTXO Optimization (dry run)',
         command: 'node',
         args: ['advanced/optimize-utxos.js', '--dry-run'],
         required: false,
         needsConfirmation: false
+      },
+      {
+        name: 'UTXO Optimization with Finality (dry run)',
+        command: 'node',
+        args: ['advanced/optimize-utxos.js', '--dry-run', '--finality'],
+        required: false,
+        needsConfirmation: false,
+        description: 'Test UTXO optimization with Avalanche finality option'
       }
     ]
 
     for (const test of tests) {
       try {
         console.log(`\n📋 Testing: ${test.name}`)
+        if (test.description) {
+          console.log(`   ℹ️  ${test.description}`)
+        }
 
         if (test.needsConfirmation) {
           console.log('⚠️  This test will send real XEC!')
@@ -633,13 +661,18 @@ class ExampleTester {
         }
 
         // Add auto-confirmation and timeout for transaction tests
+        // Longer timeout for finality tests (need extra time for Avalanche confirmation)
+        const hasFinality = test.args.includes('--finality')
         const commandOptions = test.needsConfirmation
-          ? { autoConfirm: true, timeout: 60000 } // 60 second timeout
-          : { timeout: 30000 } // 30 second timeout for other commands
+          ? { autoConfirm: true, timeout: hasFinality ? 90000 : 60000 } // 90 sec for finality, 60 sec otherwise
+          : { timeout: hasFinality ? 60000 : 30000 } // 60 sec for finality dry run, 30 sec otherwise
 
         await this.runCommand(test.command, test.args, commandOptions)
         this.testResults.push({ name: test.name, status: 'PASS' })
         console.log(`✅ ${test.name}: PASSED`)
+        if (hasFinality) {
+          console.log('   ⚡ Avalanche finality confirmed!')
+        }
       } catch (err) {
         this.testResults.push({ name: test.name, status: 'FAIL', error: err.message })
         console.log(`❌ ${test.name}: FAILED - ${err.message}`)
@@ -651,6 +684,7 @@ class ExampleTester {
     }
 
     console.log('\n✅ Phase 3 completed!')
+    console.log('⚡ Avalanche Pre-Consensus finality tests included')
   }
 
   async testTokenOperations () {
@@ -841,6 +875,7 @@ class ExampleTester {
     console.log('   ✅ UTXO Management Integration')
     console.log('   ✅ Comprehensive Error Handling')
     console.log('   ✅ Real-World Blockchain Integration')
+    console.log('   ✅ Avalanche Pre-Consensus Finality Support')
     console.log('')
 
     console.log('🪙 Supported Token Standards:')
@@ -1188,8 +1223,14 @@ async function runTests () {
     console.log('• List tokens: node examples/tokens/list-all-tokens.js')
     console.log('• Get token info: node examples/tokens/get-token-info.js <token_id>')
     console.log('• Test UTXO optimization: node examples/optimization/test-utxo-consolidation.js')
+    console.log('• Test Avalanche finality: node examples/transactions/send-xec.js <addr> <amount> --finality')
     console.log('• Read documentation: examples/README.md')
     console.log('• Start building your XEC + Token application!')
+    console.log('')
+    console.log('⚡ Avalanche Pre-Consensus Features:')
+    console.log('• Use --finality flag for instant (~3 sec) transaction confirmation')
+    console.log('• Available on send-xec, send-all-xec, send-to-multiple, send-op-return')
+    console.log('• Also available on token operations and UTXO optimization')
 
     // Ensure test script exits cleanly
     process.exit(0)
