@@ -62,6 +62,83 @@ node wallet-info/get-balance.js
 node test-examples.js
 ```
 
+## ⚡ Avalanche Pre-Consensus (Instant Finality)
+
+All transaction examples support **Avalanche Pre-Consensus** for instant transaction finality. This feature provides ~3 second confirmation instead of waiting ~10 minutes for block confirmation.
+
+### Performance Comparison
+
+| Confirmation Type | Time | Description |
+|------------------|------|-------------|
+| **Avalanche Finality** | ~3 seconds | Instant confirmation via Avalanche Pre-Consensus |
+| Block Confirmation | ~10 minutes | Traditional block mining confirmation |
+
+### Using Finality in Examples
+
+Add the `--finality` flag to any transaction example:
+
+```bash
+# Send XEC with instant finality
+node transactions/send-xec.js ecash:qp1234...abc 100 --finality
+
+# Send all XEC with finality
+node transactions/send-all-xec.js ecash:qp1234...abc --finality
+
+# Send to multiple with finality
+node transactions/send-to-multiple.js ecash:qp123...abc 50 ecash:qr456...def 30 --finality
+
+# Send tokens with finality
+node tokens/send-any-token.js tokenId recipientAddress amount --finality
+
+# Burn tokens with finality
+node tokens/burn-tokens.js tokenId amount --finality
+
+# OP_RETURN with finality
+node advanced/send-op-return.js "Message" --finality
+
+# UTXO optimization with finality
+node advanced/optimize-utxos.js --finality
+```
+
+### Programmatic Usage
+
+Use the `awaitFinality` option in your code:
+
+```javascript
+const MinimalXECWallet = require('minimal-xec-wallet')
+
+// Create wallet with Avalanche options
+const wallet = new MinimalXECWallet(mnemonic, {
+  avalanche: {
+    enabled: true,
+    defaultAwaitFinality: false,  // Set true to always wait for finality
+    finalityTimeout: 30000        // 30 second timeout
+  }
+})
+
+// Send XEC with instant finality
+const txid = await wallet.sendXec(
+  [{ address: 'ecash:qp...', amount: 10000 }],
+  { awaitFinality: true }
+)
+
+// Send all XEC with finality
+const txid = await wallet.sendAllXec('ecash:qp...', { awaitFinality: true })
+
+// Send tokens with finality
+const txid = await wallet.sendETokens(tokenId, outputs, 1.2, { awaitFinality: true })
+
+// Send OP_RETURN with finality
+const txid = await wallet.sendOpReturn(message, '6d02', outputs, 1.2, { awaitFinality: true })
+```
+
+### Benefits
+
+- **Instant Confirmation**: Transactions confirmed in ~3 seconds
+- **Double-Spend Protection**: Avalanche consensus prevents double-spend attacks
+- **User Experience**: No waiting for block confirmations
+- **Merchant Payments**: Accept payments with confidence immediately
+
 ## 📚 Example Categories
 
 ### 🔑 Wallet Creation (`wallet-creation/`)
@@ -119,11 +196,20 @@ node wallet-info/get-transactions.js
 # Send 100 XEC to an address
 node transactions/send-xec.js ecash:qp1234...abc 100
 
+# Send with Avalanche finality (~3 sec instant confirmation)
+node transactions/send-xec.js ecash:qp1234...abc 100 --finality
+
 # Send to multiple recipients
 node transactions/send-to-multiple.js ecash:qp123...abc 50 ecash:qr456...def 30
 
+# Send to multiple with finality
+node transactions/send-to-multiple.js ecash:qp123...abc 50 ecash:qr456...def 30 --finality
+
 # Send all XEC (empty wallet)
 node transactions/send-all-xec.js ecash:qp1234...abc
+
+# Send all with finality
+node transactions/send-all-xec.js ecash:qp1234...abc --finality
 ```
 
 ### ⚡ Advanced Features (`advanced/`)
@@ -141,9 +227,15 @@ node transactions/send-all-xec.js ecash:qp1234...abc
 # Embed message in blockchain
 node advanced/send-op-return.js "Hello XEC blockchain!"
 
+# Embed message with Avalanche finality
+node advanced/send-op-return.js "Hello XEC blockchain!" --finality
+
 # UTXO optimization (preview)
 node advanced/optimize-utxos.js --dry-run
 node advanced/optimize-utxos.js
+
+# UTXO optimization with finality
+node advanced/optimize-utxos.js --finality
 
 # Get current XEC price
 node advanced/get-xec-price.js
@@ -197,11 +289,17 @@ node tokens/get-token-balance.js abc123def456...
 # Send tokens (works with both SLP and ALP)
 node tokens/send-any-token.js tokenId recipientAddress amount
 
+# Send tokens with Avalanche finality
+node tokens/send-any-token.js tokenId recipientAddress amount --finality
+
 # Get token information
 node tokens/get-token-info.js abc123def456...
 
 # Burn tokens permanently
 node tokens/burn-tokens.js tokenId amount
+
+# Burn tokens with finality
+node tokens/burn-tokens.js tokenId amount --finality
 ```
 
 ### 📊 Analytics Examples (`analytics/`)
