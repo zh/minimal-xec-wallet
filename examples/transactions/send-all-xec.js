@@ -8,15 +8,22 @@ const WalletHelper = require('../utils/wallet-helper')
 
 // Get command line arguments
 const args = process.argv.slice(2)
+const useFinality = args.includes('--finality')
+const filteredArgs = args.filter(arg => arg !== '--finality')
 
 function showUsage () {
-  console.log('Usage: node send-all-xec.js <recipient_address>')
+  console.log('Usage: node send-all-xec.js <recipient_address> [--finality]')
   console.log('')
   console.log('Examples:')
   console.log('  node send-all-xec.js ecash:qp1234...abc')
+  console.log('  node send-all-xec.js ecash:qp1234...abc --finality  # Wait for Avalanche finality (~3 sec)')
   console.log('')
   console.log('Parameters:')
   console.log('  recipient_address: XEC address starting with ecash:')
+  console.log('')
+  console.log('Options:')
+  console.log('  --finality: Wait for Avalanche Pre-Consensus finality (~3 seconds)')
+  console.log('              Without this flag, confirmation takes ~10 minutes (next block)')
   console.log('')
   console.log('Warning: This will send ALL XEC in your wallet to the recipient!')
   console.log('         Transaction fees will be automatically deducted from the amount.')
@@ -27,13 +34,13 @@ async function sendAllXec () {
     console.log('💸 Sending ALL XEC from wallet...\n')
 
     // Check arguments
-    if (args.length !== 1) {
+    if (filteredArgs.length !== 1) {
       console.log('❌ Invalid arguments')
       showUsage()
       return
     }
 
-    const recipientAddress = args[0]
+    const recipientAddress = filteredArgs[0]
 
     // Validate arguments
     if (!recipientAddress || !recipientAddress.startsWith('ecash:')) {
@@ -71,6 +78,7 @@ async function sendAllXec () {
     console.log(`From: ${walletData.xecAddress}`)
     console.log(`To: ${recipientAddress}`)
     console.log(`Available Balance: ${balance.toLocaleString()} XEC`)
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (~10 min block confirmation)'}`)
     console.log('═'.repeat(60))
 
     // Show UTXOs for transparency
@@ -134,10 +142,14 @@ async function sendAllXec () {
 
     console.log('\n🚀 Broadcasting send-all transaction...')
 
-    // Send all XEC to the recipient
-    const txid = await wallet.sendAllXec(recipientAddress)
+    // Send all XEC to the recipient with optional Avalanche finality
+    const txOptions = useFinality ? { awaitFinality: true } : {}
+    const txid = await wallet.sendAllXec(recipientAddress, txOptions)
 
     console.log('\n✅ Send-all transaction sent successfully!')
+    if (useFinality) {
+      console.log('⚡ Avalanche Finality: CONFIRMED (instant ~3 sec)')
+    }
     console.log('═'.repeat(60))
     console.log(`Transaction ID: ${txid}`)
     console.log(`Recipient: ${recipientAddress}`)
@@ -164,8 +176,14 @@ async function sendAllXec () {
     console.log('   Note: It may take a few minutes to appear in the explorer')
 
     console.log('\n📝 What happens next:')
-    console.log('   • The transaction is now being processed by the network')
-    console.log('   • Confirmation usually takes 1-10 minutes')
+    if (useFinality) {
+      console.log('   • Transaction is FINAL - confirmed via Avalanche Pre-Consensus')
+      console.log('   • No need to wait for block confirmation')
+    } else {
+      console.log('   • The transaction is now being processed by the network')
+      console.log('   • Confirmation usually takes 1-10 minutes')
+      console.log('   • Use --finality flag for instant (~3 sec) Avalanche confirmation')
+    }
     console.log('   • Your wallet is now empty (balance: 0 XEC)')
     console.log('   • To use this wallet again, send XEC to:', walletData.xecAddress)
 

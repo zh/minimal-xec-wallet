@@ -8,17 +8,24 @@ const WalletHelper = require('../utils/wallet-helper')
 
 // Get command line arguments
 const args = process.argv.slice(2)
+const useFinality = args.includes('--finality')
+const filteredArgs = args.filter(arg => arg !== '--finality')
 
 function showUsage () {
-  console.log('Usage: node send-to-multiple.js <address1> <amount1> <address2> <amount2> [...]')
+  console.log('Usage: node send-to-multiple.js <address1> <amount1> <address2> <amount2> [...] [--finality]')
   console.log('')
   console.log('Examples:')
   console.log('  node send-to-multiple.js ecash:qp1234...abc 50 ecash:qr5678...def 30')
   console.log('  node send-to-multiple.js ecash:qa1111...111 100 ecash:qb2222...222 25.5 ecash:qc3333...333 75')
+  console.log('  node send-to-multiple.js ecash:qp1234...abc 50 ecash:qr5678...def 30 --finality  # Wait for Avalanche finality')
   console.log('')
   console.log('Parameters:')
   console.log('  addressN: XEC address starting with ecash:')
   console.log('  amountN: Amount in XEC (minimum 5.46 XEC per output due to dust limit)')
+  console.log('')
+  console.log('Options:')
+  console.log('  --finality: Wait for Avalanche Pre-Consensus finality (~3 seconds)')
+  console.log('              Without this flag, confirmation takes ~10 minutes (next block)')
   console.log('')
   console.log('Note: You can send to up to 100 recipients in a single transaction')
   console.log('      Transaction fee will be automatically calculated and deducted')
@@ -60,14 +67,14 @@ async function sendToMultiple () {
     console.log('📤 Sending XEC to multiple recipients...\n')
 
     // Check arguments
-    if (args.length < 4) {
+    if (filteredArgs.length < 4) {
       console.log('❌ Not enough arguments')
       showUsage()
       return
     }
 
     // Parse recipients
-    const recipients = parseRecipients(args)
+    const recipients = parseRecipients(filteredArgs)
     if (!recipients) {
       showUsage()
       return
@@ -99,6 +106,7 @@ async function sendToMultiple () {
     console.log(`Recipients: ${recipients.length}`)
     console.log(`Total Amount: ${totalAmount.toLocaleString()} XEC`)
     console.log(`Current Balance: ${balance.toLocaleString()} XEC`)
+    console.log(`Avalanche Finality: ${useFinality ? 'ENABLED (~3 sec confirmation)' : 'DISABLED (~10 min block confirmation)'}`)
     console.log('═'.repeat(70))
 
     // Show all recipients
@@ -151,10 +159,14 @@ async function sendToMultiple () {
       amountSat: Math.round(recipient.amount * 100) // Convert XEC to satoshis
     }))
 
-    // Send the transaction
-    const txid = await wallet.sendXec(outputs)
+    // Send the transaction with optional Avalanche finality
+    const txOptions = useFinality ? { awaitFinality: true } : {}
+    const txid = await wallet.sendXec(outputs, txOptions)
 
     console.log('\n✅ Multi-output transaction sent successfully!')
+    if (useFinality) {
+      console.log('⚡ Avalanche Finality: CONFIRMED (instant ~3 sec)')
+    }
     console.log('═'.repeat(70))
     console.log(`Transaction ID: ${txid}`)
     console.log(`Recipients: ${recipients.length}`)
@@ -188,6 +200,11 @@ async function sendToMultiple () {
     console.log('   • Lower total fees compared to separate transactions')
     console.log('   • Single confirmation for all recipients')
     console.log('   • More efficient use of blockchain space')
+    if (useFinality) {
+      console.log('   • Instant Avalanche finality for all recipients (~3 sec)')
+    } else {
+      console.log('   • Use --finality flag for instant (~3 sec) Avalanche confirmation')
+    }
   } catch (err) {
     console.error('❌ Failed to send multi-output transaction:', err.message)
 
