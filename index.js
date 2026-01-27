@@ -619,7 +619,7 @@ class MinimalXECWallet {
         finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
       }
 
-      return await this.sendXecLib.sendXec(
+      const txid = await this.sendXecLib.sendXec(
         outputs,
         {
           mnemonic: this.walletInfo.mnemonic,
@@ -632,6 +632,11 @@ class MinimalXECWallet {
         xecOnlyUtxos,
         finalityOptions
       )
+
+      // Refresh UTXO cache after successful transaction to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'XEC send failed')
     }
@@ -688,7 +693,7 @@ class MinimalXECWallet {
       }
 
       // Use hybrid token manager for protocol detection and routing
-      return await this.hybridTokens.sendTokens(
+      const txid = await this.hybridTokens.sendTokens(
         tokenId,
         outputs,
         {
@@ -703,6 +708,11 @@ class MinimalXECWallet {
         satsPerByte,
         finalityOptions
       )
+
+      // Refresh UTXO cache after successful transaction to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'eToken send failed')
     }
@@ -725,7 +735,7 @@ class MinimalXECWallet {
         finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
       }
 
-      return await this.sendXecLib.sendAllXec(
+      const txid = await this.sendXecLib.sendAllXec(
         toAddress,
         {
           mnemonic: this.walletInfo.mnemonic,
@@ -738,6 +748,11 @@ class MinimalXECWallet {
         this.utxos.utxoStore.xecUtxos,
         finalityOptions
       )
+
+      // Refresh UTXO cache after successful transaction to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       console.error('Error in sendAllXec():', err.message)
       throw this._sanitizeError(err, 'Send all XEC failed')
@@ -770,7 +785,7 @@ class MinimalXECWallet {
         finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
       }
 
-      return await this.opReturn.sendOpReturn(
+      const txid = await this.opReturn.sendOpReturn(
         this.walletInfo,
         xecOnlyUtxos,
         msg,
@@ -779,6 +794,11 @@ class MinimalXECWallet {
         satsPerByte,
         finalityOptions
       )
+
+      // Refresh UTXO cache after successful transaction to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       console.error('Error in sendOpReturn():', err.message)
       throw this._sanitizeError(err, 'OP_RETURN send failed')
@@ -824,7 +844,14 @@ class MinimalXECWallet {
   // Optimize wallet by consolidating UTXOs
   async optimize (dryRun = false) {
     try {
-      return await this.consolidateUtxos.start({ dryRun })
+      const result = await this.consolidateUtxos.start({ dryRun })
+
+      // Refresh UTXO cache after successful consolidation (unless dry run)
+      if (!dryRun && result.success && result.transactions && result.transactions.length > 0) {
+        await this.utxos.refreshCache(this.walletInfo.xecAddress)
+      }
+
+      return result
     } catch (err) {
       throw this._sanitizeError(err, 'UTXO optimization failed')
     }
@@ -855,12 +882,20 @@ class MinimalXECWallet {
       const shouldAwaitFinality = awaitFinality ?? this.avalancheOptions.defaultAwaitFinality
       const finalityTimeout = timeout ?? this.avalancheOptions.finalityTimeout
 
+      let txid
       // Use finalized broadcast if Avalanche is enabled and awaitFinality is requested
       if (this.avalancheOptions.enabled && shouldAwaitFinality) {
-        return await this.ar.sendTxAndFinalize(hex, finalityTimeout)
+        txid = await this.ar.sendTxAndFinalize(hex, finalityTimeout)
+      } else {
+        txid = await this.ar.sendTx(hex)
       }
 
-      return await this.ar.sendTx(hex)
+      // Refresh UTXO cache after successful broadcast to prevent stale UTXO issues
+      if (this.walletInfo && this.walletInfo.xecAddress) {
+        await this.utxos.refreshCache(this.walletInfo.xecAddress)
+      }
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'Transaction broadcast failed')
     }
@@ -883,7 +918,14 @@ class MinimalXECWallet {
       }
 
       const finalityTimeout = timeout ?? this.avalancheOptions.finalityTimeout
-      return await this.ar.sendTxAndFinalize(hex, finalityTimeout)
+      const txid = await this.ar.sendTxAndFinalize(hex, finalityTimeout)
+
+      // Refresh UTXO cache after successful finalized broadcast to prevent stale UTXO issues
+      if (this.walletInfo && this.walletInfo.xecAddress) {
+        await this.utxos.refreshCache(this.walletInfo.xecAddress)
+      }
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'Finalized broadcast failed')
     }
@@ -1005,7 +1047,7 @@ class MinimalXECWallet {
       }
 
       // Use hybrid token manager for protocol detection and routing
-      return await this.hybridTokens.burnTokens(
+      const txid = await this.hybridTokens.burnTokens(
         tokenId,
         amount,
         {
@@ -1019,6 +1061,11 @@ class MinimalXECWallet {
         this.utxos.utxoStore.utxos,
         satsPerByte
       )
+
+      // Refresh UTXO cache after successful token burn to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'eToken burn failed')
     }
@@ -1039,7 +1086,7 @@ class MinimalXECWallet {
       }
 
       // Use hybrid token manager for protocol detection and routing
-      return await this.hybridTokens.burnAllTokens(
+      const txid = await this.hybridTokens.burnAllTokens(
         tokenId,
         {
           mnemonic: this.walletInfo.mnemonic,
@@ -1051,6 +1098,11 @@ class MinimalXECWallet {
         },
         this.utxos.utxoStore.utxos
       )
+
+      // Refresh UTXO cache after successful token burn to prevent stale UTXO issues
+      await this.utxos.refreshCache(this.walletInfo.xecAddress)
+
+      return txid
     } catch (err) {
       throw this._sanitizeError(err, 'eToken burn all failed')
     }

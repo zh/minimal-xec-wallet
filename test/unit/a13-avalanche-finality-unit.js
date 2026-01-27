@@ -223,7 +223,8 @@ describe('#Avalanche Pre-Consensus Finality', () => {
               isFinal: true
             }
           ]
-        }
+        },
+        refreshCache: sandbox.stub().resolves(true)
       }
     })
 
@@ -261,7 +262,8 @@ describe('#Avalanche Pre-Consensus Finality', () => {
               isFinal: true
             }
           ]
-        }
+        },
+        refreshCache: sandbox.stub().resolves(true)
       }
     })
 
@@ -288,7 +290,8 @@ describe('#Avalanche Pre-Consensus Finality', () => {
               isFinal: true
             }
           ]
-        }
+        },
+        refreshCache: sandbox.stub().resolves(true)
       }
     })
 
@@ -320,7 +323,8 @@ describe('#Avalanche Pre-Consensus Finality', () => {
               }
             }
           ]
-        }
+        },
+        refreshCache: sandbox.stub().resolves(true)
       }
     })
 
