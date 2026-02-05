@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.1.3] - 2025-02-05
+
+### Fixed
+
+#### BIP32 Key Derivation (CRITICAL)
+
+Fixed incorrect BIP32 HD key derivation that was generating wrong addresses from mnemonics.
+
+**The Problem:**
+The `_deriveChild()` method was incorrectly using the HMAC-SHA512 output directly as the child private key, instead of adding it to the parent private key as specified by BIP32.
+
+**The Fix:**
+- Added `SECP256K1_ORDER` constant for proper modular arithmetic
+- Implemented `_privateKeyAdd()` method for BIP32-compliant key addition: `childKey = (parentKey + tweak) mod n`
+- Updated `_deriveChild()` to use proper BIP32 derivation formula
+
+**Impact:**
+- Wallets created with v2.1.2 or earlier generated incorrect addresses
+- The fix ensures addresses now match other BIP32-compliant wallets (Electron Cash, Cashtab, etc.)
+- Users who created wallets with old versions will see different addresses after upgrading
+
+**Files Updated:**
+- `lib/key-derivation.js` - Core derivation fix
+- `examples/wallet.json` - Regenerated with correct keys
+- `examples/README.md` - Updated example addresses
+- `test/unit/mocks/xec-wallet-mocks.js` - Use dynamic addresses instead of hardcoded
+
 ## [2.1.2] - 2025-02-05
 
 ### Security
