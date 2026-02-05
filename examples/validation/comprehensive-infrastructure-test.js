@@ -188,10 +188,6 @@ async function runInfrastructureTests () {
       console.log(`      awaitFinality: ${txOptions.awaitFinality}`)
       console.log(`      finalityTimeout: ${txOptions.finalityTimeout}ms`)
 
-      // Test that wallet methods accept options parameter
-      // These tests verify the API accepts the finality options without executing
-      const testOutputs = [{ address: walletData.xecAddress, amount: 546 }]
-
       // Verify sendXec accepts options parameter (dry validation)
       if (typeof wallet.sendXec === 'function') {
         console.log('   ✅ sendXec: Accepts awaitFinality option')
