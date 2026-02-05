@@ -13,6 +13,10 @@
     "examples/",
     "!examples/wallet.json*",
     "lib/",
+    "README.md",
+    "CHANGES.md",
+    "LICENSE",
+    "rollup.config.mjs",
     "index.js"
   ],
   "unpkg": "dist/minimal-xec-wallet.min.js",
