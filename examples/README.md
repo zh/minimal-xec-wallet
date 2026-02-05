@@ -334,12 +334,12 @@ node key-management/validate-address.js YOUR_ADDRESS
 📋 New Wallet Details:
 ══════════════════════════════════════════════════════
 Mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
-XEC Address: ecash:qrdczda80g7red03zqd02uuxjhfqxrthdywrq8cx3a
+XEC Address: ecash:qpluxjhhlxfjwsymf9nmctvsdrwzwygadsh2pq0ang
 HD Path: m/44'/899'/0'/0/0
 ══════════════════════════════════════════════════════
 
 ✅ Wallet saved to: /path/to/examples/wallet.json
-📍 XEC Address: ecash:qrdczda80g7red03zqd02uuxjhfqxrthdywrq8cx3a
+📍 XEC Address: ecash:qpluxjhhlxfjwsymf9nmctvsdrwzwygadsh2pq0ang
 ```
 
 ### Successful Transaction
@@ -348,7 +348,7 @@ HD Path: m/44'/899'/0'/0/0
 
 📋 Transaction Details:
 ════════════════════════════════════════════════════════════
-From: ecash:qrdczda80g7red03zqd02uuxjhfqxrthdywrq8cx3a
+From: ecash:qpluxjhhlxfjwsymf9nmctvsdrwzwygadsh2pq0ang
 To: ecash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy
 Amount: 100 XEC
 Current Balance: 1,000 XEC

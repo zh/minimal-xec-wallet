@@ -40,12 +40,12 @@ const mockKeyDerivation = {
 const realKeyData2 = keyDerivation.deriveFromMnemonic(testMnemonic, "m/44'/899'/0'/0/1")
 const realKeyData3 = keyDerivation.deriveFromMnemonic(testMnemonic, "m/44'/899'/0'/0/2")
 
-// Mock XEC addresses for testing - use hardcoded addresses to avoid derivation issues in test environment
+// Mock XEC addresses for testing - use dynamically derived addresses from test mnemonic
 const mockXecAddresses = {
   valid: [
-    'ecash:qrdczda80g7red03zqd02uuxjhfqxrthdywrq8cx3a', // Primary test address
-    'ecash:qqzrk6z7p8qp29fw5wunw7ak865y2jewjs99gt9chw', // Secondary test address
-    'ecash:qzj28m9sjvumvu3y0xgprp4vdep8wjazuu4je3jl5t' // Tertiary test address
+    realKeyData.address, // Primary test address (derived dynamically)
+    realKeyData2.address, // Secondary test address (derived dynamically)
+    realKeyData3.address // Tertiary test address (derived dynamically)
   ],
   invalid: [
     'bitcoincash:qp1234567890abcdef1234567890abcdef1234567890', // Wrong prefix
