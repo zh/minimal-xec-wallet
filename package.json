@@ -12,6 +12,8 @@
     "dist/",
     "examples/",
     "lib/",
+    "CHANGES.md",
+    "rollup.config.mjs",
     "index.js"
   ],
   "unpkg": "dist/minimal-xec-wallet.min.js",
