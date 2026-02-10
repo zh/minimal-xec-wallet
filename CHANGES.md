@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.2.3] - 2025-02-10
+
+### Fixed
+
+#### Message Signing BigInt Error (CRITICAL)
+
+Fixed `signMessage()` crashing in the browser with `Cannot mix BigInt and other types, use explicit conversions`.
+
+**The Problem:**
+The `signRecoverable` method in `initBrowser-shim.js` called `secp256k1.sign()` and accessed `.r`, `.s`, `.recovery` on the result. But `@noble/curves` v2 `sign()` returns a `Uint8Array`, not a Signature object. Accessing `.r` on a Uint8Array yields `undefined`, and `bigIntToBytes(undefined, 32)` triggers the BigInt TypeError.
+
+The same issue affected `recoverSig()` which manually reconstructed a Signature via `new Signature(r, s, recoveryId)` — functional but unnecessarily complex.
+
+**The Fix:**
+- `signRecoverable`: use `format: 'recovered'` option which makes `sign()` return the 65-byte `[recovery_id, r(32), s(32)]` format directly
+- `recoverSig`: use `secp256k1.recoverPublicKey(sig, msg)` which natively parses the recovered format and returns compressed public key bytes
+
+**Note:** The CLI wallet was unaffected because it runs in Node.js where ecash-lib uses native WASM — the browser shim is never invoked.
+
+### Files Updated
+- `browser-shims/initBrowser-shim.js` — Fix signRecoverable and recoverSig for noble curves v2 API
+
 ## [2.2.2] - 2025-02-10
 
 ### Added

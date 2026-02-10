@@ -190,26 +190,11 @@ class NobleEcc {
   }
 
   signRecoverable (seckey, msg) {
-    const sig = secp256k1.sign(msg, seckey, { lowS: true, prehash: false })
-    const r = sig.r
-    const s = sig.s
-    const recovery = sig.recovery
-    // 65 bytes: [recovery_id, r(32), s(32)]
-    const result = new Uint8Array(65)
-    result[0] = recovery
-    result.set(bigIntToBytes(r, 32), 1)
-    result.set(bigIntToBytes(s, 32), 33)
-    return result
+    return secp256k1.sign(msg, seckey, { lowS: true, prehash: false, format: 'recovered' })
   }
 
   recoverSig (sig, msg) {
-    const recoveryId = sig[0]
-    const r = bytesToBigInt(sig.slice(1, 33))
-    const s = bytesToBigInt(sig.slice(33, 65))
-    const Signature = secp256k1.Signature
-    const recSig = new Signature(r, s, recoveryId)
-    const point = recSig.recoverPublicKey(msg)
-    return point.toRawBytes(true)
+    return secp256k1.recoverPublicKey(sig, msg, { prehash: false })
   }
 }
 
