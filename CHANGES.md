@@ -1,5 +1,44 @@
 # Changelog
 
+## [2.1.4] - 2025-02-10
+
+### Fixed
+
+#### Browser Token Sends (CRITICAL)
+
+Fixed SLP/ALP token sends crashing in the browser with `Cannot read properties of undefined (reading 'BASE')`.
+
+**The Problem:**
+The `initBrowser-shim.js` used `secp256k1.ProjectivePoint` to access the elliptic curve point class, but `@noble/curves` v2's `ecdsa()` exports it as `Point`, not `ProjectivePoint`. This caused all transaction signing to fail in the browser bundle.
+
+**The Fix:**
+- Replaced all 7 `secp256k1.ProjectivePoint` references with `secp256k1.Point` in `browser-shims/initBrowser-shim.js`
+
+#### Improved ALP Token Send Error Messages
+
+Replaced raw sats values with human-readable XEC amounts and actionable advice in ALP insufficient-funds errors.
+
+- "Need 1452 sats, have 546 from tokens" becomes "Need 14.52 XEC total, but only have 5.46 XEC from token UTXOs. Send some XEC to this address first."
+- Added shortfall amount when wallet is partially funded
+
+#### More Accurate Fee Estimation
+
+Updated transaction size estimation for Schnorr-signed P2PKH inputs (141 bytes instead of 148 for DER-encoded signatures).
+
+- `lib/alp-token-handler.js`: 148 -> 141 bytes/input, 50 -> 43 overhead
+- `lib/slp-token-handler.js`: 148 -> 141 bytes/input
+
+#### Example Pre-check Threshold
+
+Raised the minimum XEC balance check in `examples/test-examples.js` from 1 XEC to 15 XEC, which is the realistic minimum needed for dust outputs + fees in a token send.
+
+### Files Updated
+
+- `browser-shims/initBrowser-shim.js` - Fix ProjectivePoint -> Point
+- `lib/alp-token-handler.js` - Error messages and fee estimation
+- `lib/slp-token-handler.js` - Fee estimation
+- `examples/test-examples.js` - Pre-check threshold
+
 ## [2.1.3] - 2025-02-05
 
 ### Fixed

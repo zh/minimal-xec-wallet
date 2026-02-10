@@ -1082,9 +1082,10 @@ class ExampleTester {
     const xecBalance = await wallet.getXecBalance()
     console.log(`💰 XEC available for fees: ${xecBalance.toFixed(2)} XEC`)
 
-    if (xecBalance < 1) {
-      console.log('❌ Insufficient XEC for transaction fees')
-      console.log('💡 This is expected - demo shows validation working')
+    const minXecForTokenSend = 15
+    if (xecBalance < minXecForTokenSend) {
+      console.log(`❌ Insufficient XEC for token send fees (need ~${minXecForTokenSend} XEC, have ${xecBalance.toFixed(2)} XEC)`)
+      console.log('💡 Send more XEC to this wallet address to enable token sends')
       return
     }
 
