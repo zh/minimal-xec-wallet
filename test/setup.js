@@ -192,6 +192,8 @@ Module.prototype.require = function (id) {
       toHex: sinon.stub().returns('020000000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
       Ecc: function MockEcc () {
         this.derivePubkey = sinon.stub().returns(Buffer.from('mock_pubkey', 'hex'))
+        this.signRecoverable = sinon.stub().returns(new Uint8Array(65).fill(0x42))
+        this.recoverSig = sinon.stub().returns(Buffer.from('mock_recovered_pubkey'))
         return this
       },
       Script: (() => {
@@ -219,6 +221,12 @@ Module.prototype.require = function (id) {
       SLP_FUNGIBLE: 1,
       SLP_TOKEN_TYPE_FUNGIBLE: { protocol: 'SLP', type: 'SLP_TOKEN_TYPE_FUNGIBLE', number: 1 },
       ALP_STANDARD: 0
+    }
+  }
+  if (id === 'ecash-lib/dist/hash.js') {
+    return {
+      sha256d: sinon.stub().returns(new Uint8Array(32).fill(0xab)),
+      shaRmd160: sinon.stub().returns(Buffer.from('0123456789abcdef0123456789abcdef01234567', 'hex'))
     }
   }
   if (id === 'ecashaddrjs') {

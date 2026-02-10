@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.2.2] - 2025-02-10
+
+### Added
+
+#### Message Signing & Verification
+New public API methods for the eCash message signing protocol (compatible with ecash-lib's `signMsg`/`verifyMsg`):
+
+- `signMessage(msg)` — Sign a message with the wallet's private key, returns base64 signature
+- `verifyMessage(msg, signature, address)` — Verify a message signature against an address, returns boolean
+- `_magicHash(msg)` (static) — Internal: compute sha256d of prefixed message (`"\x16eCash Signed Message:\n" + varint(len) + msg`)
+
+These methods use the already-shimmed pure-JS crypto (via `@noble/curves`) and work in both Node.js and browser environments without WASM.
+
+**New test file:** `test/unit/a15-sign-verify-message-unit.js` — 15 unit tests covering validation, happy paths, and edge cases
+
+**New example:** `examples/key-management/sign-verify-message.js` — Demonstrates sign + verify round-trip
+
+### Fixed
+- Removed stray `console.error` in `verifyMessage()` (missed during v2.2.1 cleanup)
+
 ## [2.2.1] - 2025-02-10
 
 ### Changed

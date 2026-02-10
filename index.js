@@ -18,6 +18,9 @@ const OpReturn = require('./lib/op-return')
 const ConsolidateUtxos = require('./lib/consolidate-utxos.js')
 const KeyDerivation = require('./lib/key-derivation')
 const HybridTokenManager = require('./lib/hybrid-token-manager')
+const { Ecc, fromHex } = require('ecash-lib')
+const { sha256d: ecashSha256d, shaRmd160: ecashShaRmd160 } = require('ecash-lib/dist/hash.js')
+const { decodeCashAddress } = require('ecashaddrjs')
 
 // let this
 
@@ -127,6 +130,8 @@ class MinimalXECWallet {
     this._secureWalletInfo = this._secureWalletInfo.bind(this)
     this.exportPrivateKeyAsWIF = this.exportPrivateKeyAsWIF.bind(this)
     this.validateWIF = this.validateWIF.bind(this)
+    this.signMessage = this.signMessage.bind(this)
+    this.verifyMessage = this.verifyMessage.bind(this)
   }
 
   // Private method to validate XEC addresses
@@ -1077,6 +1082,95 @@ class MinimalXECWallet {
     } catch (err) {
       return false
     }
+  }
+
+  // Sign a message using the eCash message signing protocol
+  signMessage (msg) {
+    try {
+      if (!this.walletInfo || !this.walletInfo.privateKey) {
+        throw new Error('Wallet not initialized or no private key available')
+      }
+      if (!msg || typeof msg !== 'string') {
+        throw new Error('Message must be a non-empty string')
+      }
+
+      const sk = fromHex(this.walletInfo.privateKey)
+      const hash = MinimalXECWallet._magicHash(msg)
+      const sig = new Ecc().signRecoverable(sk, hash)
+
+      // Convert Uint8Array to base64
+      const binaryString = String.fromCharCode.apply(null, sig)
+      return globalThis.btoa(binaryString)
+    } catch (err) {
+      throw this._sanitizeError(err, 'Message signing failed')
+    }
+  }
+
+  // Verify a message signature against an address
+  verifyMessage (msg, signature, address) {
+    try {
+      if (!msg || typeof msg !== 'string') {
+        throw new Error('Message must be a non-empty string')
+      }
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('Signature must be a non-empty string')
+      }
+      if (!address || typeof address !== 'string') {
+        throw new Error('Address must be a non-empty string')
+      }
+
+      const hash = MinimalXECWallet._magicHash(msg)
+
+      // Decode base64 signature to Uint8Array
+      const binaryString = globalThis.atob(signature)
+      const sig = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        sig[i] = binaryString.charCodeAt(i)
+      }
+
+      const recoveredPk = new Ecc().recoverSig(sig, hash)
+
+      // Get hash160 of recovered public key as hex
+      const recoveredHash = Array.from(ecashShaRmd160(recoveredPk))
+        .map(b => b.toString(16).padStart(2, '0')).join('')
+
+      // Get hash from the address
+      const decoded = decodeCashAddress(address)
+      const testedHash = decoded.hash
+
+      return recoveredHash === testedHash
+    } catch (err) {
+      return false
+    }
+  }
+
+  // Prepare message hash per eCash message signing protocol
+  static _magicHash (msg) {
+    const encoder = new TextEncoder()
+    const prefix = encoder.encode('\x16eCash Signed Message:\n')
+    const messageBytes = encoder.encode(msg)
+
+    // Write varint for message length
+    const len = messageBytes.length
+    let varintBytes
+    if (len < 0xfd) {
+      varintBytes = new Uint8Array([len])
+    } else if (len <= 0xffff) {
+      varintBytes = new Uint8Array([0xfd, len & 0xff, (len >> 8) & 0xff])
+    } else {
+      varintBytes = new Uint8Array([
+        0xfe, len & 0xff, (len >> 8) & 0xff,
+        (len >> 16) & 0xff, (len >> 24) & 0xff
+      ])
+    }
+
+    // Concatenate: prefix + varint + message
+    const data = new Uint8Array(prefix.length + varintBytes.length + messageBytes.length)
+    data.set(prefix, 0)
+    data.set(varintBytes, prefix.length)
+    data.set(messageBytes, prefix.length + varintBytes.length)
+
+    return ecashSha256d(data)
   }
 }
 
