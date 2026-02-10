@@ -278,17 +278,12 @@ describe('#adapters/router.js - Enhanced Coverage', () => {
         assert.equal(typeof result, 'number')
       })
 
-      it('should handle very large BigInt values with warning', () => {
+      it('should handle very large BigInt values', () => {
         const hugeBigInt = BigInt(Number.MAX_SAFE_INTEGER) + BigInt(1000000)
-
-        // Capture console.warn
-        const warnStub = sandbox.stub(console, 'warn')
 
         const result = router._ensureNumberFromBigInt(hugeBigInt)
 
         assert.isNumber(result)
-        assert.isTrue(warnStub.calledOnce)
-        assert.include(warnStub.firstCall.args[0], 'exceeds safe Number range')
       })
 
       it('should convert string numbers correctly', () => {
@@ -348,14 +343,12 @@ describe('#adapters/router.js - Enhanced Coverage', () => {
         assert.equal(result, BigInt(450000))
       })
 
-      it('should handle malformed UTXO data with warnings', () => {
-        const warnStub = sandbox.stub(console, 'warn')
+      it('should handle malformed UTXO data', () => {
         const utxo = { sats: 'invalid_number', value: null }
 
         const result = router._extractSatsFromUtxo(utxo)
 
         assert.equal(result, BigInt(0))
-        assert.isTrue(warnStub.called)
       })
 
       it('should prioritize sats over value', () => {
@@ -365,14 +358,12 @@ describe('#adapters/router.js - Enhanced Coverage', () => {
         assert.equal(result, BigInt(100000))
       })
 
-      it('should handle empty UTXO with warning', () => {
-        const warnStub = sandbox.stub(console, 'warn')
+      it('should handle empty UTXO', () => {
         const utxo = {}
 
         const result = router._extractSatsFromUtxo(utxo)
 
         assert.equal(result, BigInt(0))
-        assert.isTrue(warnStub.called)
       })
     })
   })
@@ -718,31 +709,6 @@ describe('#adapters/router.js - Enhanced Coverage', () => {
         const result = await router.getPubKey('ecash:qp123')
         assert.isNull(result)
       })
-
-      it('should return zero for PSF write price', async () => {
-        const result = await router.getPsfWritePrice()
-        assert.equal(result, 0)
-      })
-    })
-  })
-
-  describe('#Phase 2 eToken Operations', () => {
-    it('should throw not implemented errors for eToken operations', async () => {
-      try {
-        await router.getETokenData('tokenId123')
-        assert.fail('Should throw Phase 2 error')
-      } catch (err) {
-        assert.include(err.message, 'eToken operations not yet implemented - Phase 2')
-      }
-    })
-
-    it('should throw not implemented errors for eToken data queries', async () => {
-      try {
-        await router.getETokenData2('tokenId123', true)
-        assert.fail('Should throw Phase 2 error')
-      } catch (err) {
-        assert.include(err.message, 'eToken operations not yet implemented - Phase 2')
-      }
     })
   })
 })

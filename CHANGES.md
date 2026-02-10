@@ -1,5 +1,70 @@
 # Changelog
 
+## [2.2.1] - 2025-02-10
+
+### Changed
+
+#### Code Cleanup & Deduplication
+
+Major internal cleanup reducing code duplication and removing dead code. No public API changes.
+
+**Dead code removed:**
+- Deleted `lib/browser-wasm-loader.js` (446 lines) and `browser-shims/ecash_lib_wasm_browser.js` (309 lines) — unused WASM loader code
+- Removed 3 dead `require('./browser-shims/...')` calls and `_initializeWASM()` method from `index.js`
+- Removed 3 stub methods from `lib/adapters/router.js` (`getETokenData`, `getETokenData2`, `getPsfWritePrice`)
+
+**Debug statements removed:**
+- Removed all ~120 `console.log`/`console.warn`/`console.error` statements from lib/ and index.js
+- Errors now propagate via `throw` only, no console side-effects
+
+**Shared utilities extracted (`lib/tx-utils.js`):**
+- `getUtxoValue()` — single implementation replacing 6 duplicate copies across lib/
+- `estimateFee()` — single fee calculator replacing 5 duplicates, uses 141 bytes/input (Schnorr P2PKH)
+- `getPrivateKey()` — shared key derivation helper
+- `getOutputScript()` — shared P2PKH script builder
+
+**Token handler base class (`lib/base-token-handler.js`):**
+- Extracted ~400 lines of shared logic from SLP and ALP token handlers
+- Shared methods: `sendTokens()`, `burnTokens()`, `_categorizeUtxos()`, `_selectTokenUtxos()`, `_selectXecUtxos()`, `_displayToAtoms()`, `_atomsToDisplay()`
+- SLP and ALP handlers now extend `BaseTokenHandler`, keeping only protocol-specific transaction building
+
+**Dependencies cleaned up:**
+- Removed unused: `@chris.troutner/retry-queue-commonjs`, `bignumber.js`
+- Removed unused devDep: `lodash.clonedeep`
+- Moved `qrcode-terminal` to devDependencies (only used in examples/)
+- Fixed `"module"` field to point to ESM bundle (`./dist/minimal-xec-wallet.esm.js`)
+
+**Impact:**
+- Bundle size: ~711KB → ~574KB minified (-19%)
+- 0 console statements in production code (was ~120)
+- 527 tests passing (was 504, +23 new tests for shared utilities)
+
+### Files Added
+- `lib/tx-utils.js` — shared transaction utilities
+- `lib/base-token-handler.js` — shared SLP/ALP base class
+- `test/unit/a14-tx-utils.js` — unit tests for tx-utils
+
+### Files Deleted
+- `lib/browser-wasm-loader.js`
+- `browser-shims/ecash_lib_wasm_browser.js`
+
+### Files Modified
+- `index.js` — removed dead WASM code and console statements
+- `lib/slp-token-handler.js` — extends BaseTokenHandler, uses tx-utils
+- `lib/alp-token-handler.js` — extends BaseTokenHandler, uses tx-utils
+- `lib/send-xec.js` — uses tx-utils
+- `lib/op-return.js` — uses tx-utils
+- `lib/consolidate-utxos.js` — uses tx-utils
+- `lib/utxos.js` — uses tx-utils
+- `lib/hybrid-token-manager.js` — removed console statements
+- `lib/adapters/router.js` — removed stubs and console statements
+- `lib/adapters/robust-chronik-router.js` — removed console statements
+- `lib/utxo-analytics/UtxoHealthMonitor.js` — removed console statements
+- `lib/utxo-analytics/UtxoClassifier.js` — removed console statements
+- `lib/token-protocol-detector.js` — removed console statements
+- `lib/security.js` — removed console statements
+- `package.json` — removed unused deps, fixed module field
+
 ## [2.1.4] - 2025-02-10
 
 ### Fixed

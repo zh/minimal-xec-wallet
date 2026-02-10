@@ -10,6 +10,9 @@ const sinon = require('sinon')
 const mockUtxos = require('./mocks/xec-utxo-mocks')
 const mockWallet = require('./mocks/xec-wallet-mocks')
 
+// Shared utilities
+const { getUtxoValue } = require('../../lib/tx-utils')
+
 // Unit under test
 const Utxos = require('../../lib/utxos')
 
@@ -199,7 +202,7 @@ describe('#utxos.js - XEC UTXO Management', () => {
 
       // Should exclude UTXOs below dust limit
       filtered.forEach(utxo => {
-        const value = uut._getUtxoValue(utxo)
+        const value = getUtxoValue(utxo)
         assert.isTrue(value >= dustLimit)
       })
     })
@@ -212,12 +215,12 @@ describe('#utxos.js - XEC UTXO Management', () => {
 
       // Ascending order
       for (let i = 1; i < sortedAsc.length; i++) {
-        assert.isTrue(uut._getUtxoValue(sortedAsc[i]) >= uut._getUtxoValue(sortedAsc[i - 1]))
+        assert.isTrue(getUtxoValue(sortedAsc[i]) >= getUtxoValue(sortedAsc[i - 1]))
       }
 
       // Descending order
       for (let i = 1; i < sortedDesc.length; i++) {
-        assert.isTrue(uut._getUtxoValue(sortedDesc[i]) <= uut._getUtxoValue(sortedDesc[i - 1]))
+        assert.isTrue(getUtxoValue(sortedDesc[i]) <= getUtxoValue(sortedDesc[i - 1]))
       }
     })
   })

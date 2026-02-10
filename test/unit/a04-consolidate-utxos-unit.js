@@ -9,6 +9,7 @@ const sinon = require('sinon')
 
 // Local libraries
 const ConsolidateUtxos = require('../../lib/consolidate-utxos')
+const { estimateFee } = require('../../lib/tx-utils')
 
 // Mocking data libraries
 // const mockUtxos = require('./mocks/xec-utxo-mocks')
@@ -404,8 +405,8 @@ describe('ConsolidateUtxos', () => {
     })
 
     it('should calculate fees correctly', () => {
-      const fee = consolidator._calculateConsolidationFee(2, 1, 1.2)
-      assert.isAbove(fee, 0, '_calculateConsolidationFee calculates positive fee')
+      const fee = estimateFee(2, 1, 1.2)
+      assert.isAbove(fee, 0, 'estimateFee calculates positive fee')
 
       const currentFee = consolidator._estimateCurrentSpendingFee([createMockUtxo(1000, 0)], 1.2)
       assert.isAbove(currentFee, 0, '_estimateCurrentSpendingFee calculates positive fee')

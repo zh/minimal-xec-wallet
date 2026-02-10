@@ -1,9 +1,9 @@
 {
   "name": "minimal-xec-wallet",
-  "version": "2.1.4",
+  "version": "2.2.1",
   "description": "A minimalist eCash (XEC) wallet npm library, for use in web apps. Supports eTokens.",
   "main": "./index.js",
-  "module": "./dist/minimal-xec-wallet.min.js",
+  "module": "./dist/minimal-xec-wallet.esm.js",
   "directories": {
     "examples": "examples",
     "lib": "lib"
@@ -60,18 +60,15 @@
   },
   "repository": "github:zh/minimal-xec-wallet",
   "dependencies": {
-    "@chris.troutner/retry-queue-commonjs": "1.0.8",
     "@noble/curves": "^2.0.1",
     "@scure/bip39": "^1.6.0",
-    "bignumber.js": "^9.0.0",
     "bs58": "^5.0.0",
     "chronik-client": "^4.1.0",
     "create-hash": "^1.2.0",
     "create-hmac": "^1.1.7",
     "crypto-js": "^4.2.0",
     "ecash-lib": "^4.5.1",
-    "ecashaddrjs": "^2.0.0",
-    "qrcode-terminal": "^0.12.0"
+    "ecashaddrjs": "^2.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.0",
@@ -89,13 +86,13 @@
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-standard": "^5.0.0",
     "husky": "4.3.8",
-    "lodash.clonedeep": "4.5.0",
     "mocha": "^11.0.0",
     "nyc": "15.1.0",
     "rollup": "^4.30.0",
     "rollup-plugin-polyfill-node": "^0.13.0",
     "semantic-release": "^25.0.0",
     "sinon": "^17.0.0",
+    "qrcode-terminal": "^0.12.0",
     "standard": "16.0.4",
     "stream-browserify": "^3.0.0"
   },
@@ -113,8 +110,7 @@
     ]
   },
   "browser": {
-    "ecash-lib": "ecash-lib/dist/indexBrowser.js",
-    "ecash-lib/dist/ffi/ecash_lib_wasm_browser.js": "./browser-shims/ecash_lib_wasm_browser.js"
+    "ecash-lib": "ecash-lib/dist/indexBrowser.js"
   },
   "husky": {
     "hooks": {

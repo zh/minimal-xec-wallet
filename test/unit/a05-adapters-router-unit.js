@@ -476,15 +476,4 @@ describe('#adapters/router.js - Chronik API Router', () => {
       }
     })
   })
-
-  // TODO: Phase 2 - eToken-related adapter tests will be added
-  describe('#eToken operations - Phase 2', () => {
-    it('getETokenData should be ready for implementation', () => {
-      assert.isFunction(uut.getETokenData)
-    })
-
-    it('getETokenData2 should be ready for implementation', () => {
-      assert.isFunction(uut.getETokenData2)
-    })
-  })
 })

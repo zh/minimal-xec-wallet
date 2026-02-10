@@ -13,6 +13,9 @@
 const assert = require('chai').assert
 const sinon = require('sinon')
 
+// Shared utilities (for testing standalone functions that replaced class methods)
+const { getUtxoValue, estimateFee } = require('../../lib/tx-utils')
+
 // Unit under test
 const OpReturn = require('../../lib/op-return')
 
@@ -502,31 +505,31 @@ describe('#OpReturn', () => {
     })
   })
 
-  describe('#_calculateFee', () => {
+  describe('#estimateFee (from tx-utils)', () => {
     it('should calculate fee correctly', () => {
-      const fee = opReturn._calculateFee(2, 3, 1.2)
+      const fee = estimateFee(2, 3, 1.2)
 
-      // Expected: (2*148 + 3*34 + 10) * 1.2 = 408 * 1.2 = 489.6 → 490
-      const expectedSize = (2 * 148) + (3 * 34) + 10
+      // Expected: (2*141 + 3*34 + 10) * 1.2 = 404 * 1.2 = 484.8 -> 485
+      const expectedSize = (2 * 141) + (3 * 34) + 10
       const expectedFee = Math.ceil(expectedSize * 1.2)
 
       assert.equal(fee, expectedFee)
     })
 
     it('should handle zero fee rate', () => {
-      const fee = opReturn._calculateFee(1, 2, 0)
+      const fee = estimateFee(1, 2, 0)
       assert.equal(fee, 0)
     })
 
     it('should handle single input/output', () => {
-      const fee = opReturn._calculateFee(1, 1, 1.0)
-      const expectedSize = (1 * 148) + (1 * 34) + 10
+      const fee = estimateFee(1, 1, 1.0)
+      const expectedSize = (1 * 141) + (1 * 34) + 10
       assert.equal(fee, expectedSize)
     })
 
     it('should round up fees', () => {
-      const fee = opReturn._calculateFee(1, 1, 0.1)
-      const expectedSize = (1 * 148) + (1 * 34) + 10
+      const fee = estimateFee(1, 1, 0.1)
+      const expectedSize = (1 * 141) + (1 * 34) + 10
       assert.equal(fee, Math.ceil(expectedSize * 0.1))
     })
   })
@@ -616,51 +619,46 @@ describe('#OpReturn', () => {
     })
   })
 
-  describe('#_getUtxoValue', () => {
+  describe('#getUtxoValue (from tx-utils)', () => {
     it('should extract value from sats property', () => {
       const utxo = { sats: '12345' }
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 12345)
     })
 
     it('should extract value from bigint sats', () => {
       const utxo = { sats: BigInt(12345) }
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 12345)
     })
 
     it('should extract value from value property', () => {
       const utxo = { value: '67890' }
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 67890)
     })
 
     it('should extract value from bigint value', () => {
       const utxo = { value: BigInt(67890) }
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 67890)
     })
 
     it('should prioritize sats over value', () => {
       const utxo = { sats: '12345', value: '67890' }
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 12345)
     })
 
     it('should return 0 for missing properties', () => {
       const utxo = {}
-      const value = opReturn._getUtxoValue(utxo)
+      const value = getUtxoValue(utxo)
       assert.equal(value, 0)
     })
 
-    it('should handle null UTXO', () => {
-      // This test should expect the actual behavior - the method doesn't handle null gracefully
-      try {
-        opReturn._getUtxoValue(null)
-        assert.fail('Should have thrown error for null UTXO')
-      } catch (err) {
-        assert.include(err.message, 'Cannot read properties of null')
-      }
+    it('should return 0 for null UTXO', () => {
+      const value = getUtxoValue(null)
+      assert.equal(value, 0)
     })
   })
 })

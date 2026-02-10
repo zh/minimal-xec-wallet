@@ -10,6 +10,9 @@ const sinon = require('sinon')
 // Test data
 const tokenMocks = require('./mocks/token-mocks')
 
+// Shared utilities (for testing standalone functions that replaced class methods)
+const { getUtxoValue, estimateFee } = require('../../lib/tx-utils')
+
 // Unit under test
 const SLPTokenHandler = require('../../lib/slp-token-handler')
 
@@ -324,22 +327,22 @@ describe('#SLPTokenHandler', () => {
     it('should categorize UTXOs by type', () => {
       const result = uut._categorizeUtxos(tokenMocks.mixedTokenUtxos, tokenMocks.FLCT_TOKEN_ID)
 
-      assert.property(result, 'slpUtxos')
+      assert.property(result, 'tokenUtxos')
       assert.property(result, 'xecUtxos')
-      assert.isArray(result.slpUtxos)
+      assert.isArray(result.tokenUtxos)
       assert.isArray(result.xecUtxos)
 
-      assert.equal(result.slpUtxos.length, 1)
+      assert.equal(result.tokenUtxos.length, 1)
       assert.equal(result.xecUtxos.length, 1) // Only pure XEC UTXOs to prevent token burns
 
       // Verify SLP UTXO has correct token ID
-      assert.equal(result.slpUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)
+      assert.equal(result.tokenUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)
     })
 
     it('should handle empty UTXO array', () => {
       const result = uut._categorizeUtxos([], tokenMocks.FLCT_TOKEN_ID)
 
-      assert.deepEqual(result.slpUtxos, [])
+      assert.deepEqual(result.tokenUtxos, [])
       assert.deepEqual(result.xecUtxos, [])
     })
   })
@@ -433,9 +436,9 @@ describe('#SLPTokenHandler', () => {
     })
   })
 
-  describe('#_estimateTransactionFee', () => {
+  describe('#estimateFee (from tx-utils)', () => {
     it('should estimate transaction fee', () => {
-      const fee = uut._estimateTransactionFee(2, 4, 1.2) // 2 inputs, 4 outputs, 1.2 sats/byte
+      const fee = estimateFee(2, 4, 1.2) // 2 inputs, 4 outputs, 1.2 sats/byte
 
       assert.isNumber(fee)
       assert.isAbove(fee, 0)
@@ -445,17 +448,17 @@ describe('#SLPTokenHandler', () => {
     })
 
     it('should scale with input/output count', () => {
-      const smallFee = uut._estimateTransactionFee(1, 2, 1.0)
-      const largeFee = uut._estimateTransactionFee(5, 10, 1.0)
+      const smallFee = estimateFee(1, 2, 1.0)
+      const largeFee = estimateFee(5, 10, 1.0)
 
       assert.isAbove(largeFee, smallFee)
     })
   })
 
-  describe('#_getUtxoValue', () => {
+  describe('#getUtxoValue (from tx-utils)', () => {
     it('should extract UTXO value as number', () => {
       const utxo = { sats: 150000 }
-      const result = uut._getUtxoValue(utxo)
+      const result = getUtxoValue(utxo)
 
       assert.equal(result, 150000)
       assert.isNumber(result)
@@ -463,7 +466,7 @@ describe('#SLPTokenHandler', () => {
 
     it('should handle BigInt sats', () => {
       const utxo = { sats: 150000n }
-      const result = uut._getUtxoValue(utxo)
+      const result = getUtxoValue(utxo)
 
       assert.equal(result, 150000)
       assert.isNumber(result)
@@ -471,7 +474,7 @@ describe('#SLPTokenHandler', () => {
 
     it('should handle string sats', () => {
       const utxo = { sats: '150000' }
-      const result = uut._getUtxoValue(utxo)
+      const result = getUtxoValue(utxo)
 
       assert.equal(result, 150000)
       assert.isNumber(result)
@@ -479,7 +482,7 @@ describe('#SLPTokenHandler', () => {
 
     it('should return 0 for missing sats', () => {
       const utxo = {}
-      const result = uut._getUtxoValue(utxo)
+      const result = getUtxoValue(utxo)
 
       assert.equal(result, 0)
     })

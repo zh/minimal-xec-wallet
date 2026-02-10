@@ -10,6 +10,9 @@ const sinon = require('sinon')
 const mockUtxos = require('./mocks/xec-utxo-mocks')
 const mockWallet = require('./mocks/xec-wallet-mocks')
 
+// Shared utilities (used for inline value checks in tests)
+const { getUtxoValue } = require('../../lib/tx-utils')
+
 // Unit under test
 const SendXEC = require('../../lib/send-xec')
 
@@ -188,8 +191,8 @@ describe('#send-xec.js - XEC Transaction Sending', () => {
 
       assert.isNumber(fee)
       assert.isTrue(fee > 0)
-      // Basic transaction size estimate: (inputs * 148) + (outputs * 34) + 10
-      const estimatedSize = (numInputs * 148) + (numOutputs * 34) + 10
+      // Schnorr P2PKH size estimate: (inputs * 141) + (outputs * 34) + 10
+      const estimatedSize = (numInputs * 141) + (numOutputs * 34) + 10
       const expectedFee = Math.ceil(estimatedSize * satsPerByte)
       assert.equal(fee, expectedFee)
     })
@@ -207,7 +210,7 @@ describe('#send-xec.js - XEC Transaction Sending', () => {
       const sorted = uut.sortUtxosBySize(utxos, 'asc')
 
       for (let i = 1; i < sorted.length; i++) {
-        assert.isTrue(uut._getUtxoValue(sorted[i]) >= uut._getUtxoValue(sorted[i - 1]))
+        assert.isTrue(getUtxoValue(sorted[i]) >= getUtxoValue(sorted[i - 1]))
       }
     })
 
@@ -217,7 +220,7 @@ describe('#send-xec.js - XEC Transaction Sending', () => {
       const sorted = uut.sortUtxosBySize(utxos, 'desc')
 
       for (let i = 1; i < sorted.length; i++) {
-        assert.isTrue(uut._getUtxoValue(sorted[i]) <= uut._getUtxoValue(sorted[i - 1]))
+        assert.isTrue(getUtxoValue(sorted[i]) <= getUtxoValue(sorted[i - 1]))
       }
     })
   })
@@ -255,15 +258,15 @@ describe('#send-xec.js - XEC Transaction Sending', () => {
       const utxos = mockUtxos.simpleXecUtxos.utxos
 
       // Mock the fee calculation to return a predictable fee
-      sandbox.stub(uut, '_calculateFee').returns(200) // 2 XEC fee
+      sandbox.stub(uut, '_calcFee').returns(200) // 2 XEC fee
 
       const result = await uut.createSendAllTx(toAddress, walletInfo, utxos)
 
       assert.isString(result)
       // Verify fee was calculated and accounted for
-      assert.isTrue(uut._calculateFee.calledOnce)
+      assert.isTrue(uut._calcFee.calledOnce)
       // Verify the fee calculation was called with correct parameters (1 output, utxos.length inputs)
-      assert.isTrue(uut._calculateFee.calledWith(utxos.length, 1))
+      assert.isTrue(uut._calcFee.calledWith(utxos.length, 1))
     })
   })
 

@@ -10,6 +10,9 @@ const sinon = require('sinon')
 // Test data
 const tokenMocks = require('./mocks/token-mocks')
 
+// Shared utilities (for testing standalone functions that replaced class methods)
+const { estimateFee } = require('../../lib/tx-utils')
+
 // Unit under test
 const ALPTokenHandler = require('../../lib/alp-token-handler')
 
@@ -361,23 +364,23 @@ describe('#ALPTokenHandler', () => {
     it('should categorize UTXOs by type for ALP', () => {
       const result = uut._categorizeUtxos(tokenMocks.mixedTokenUtxos, tokenMocks.TGR_TOKEN_ID)
 
-      assert.property(result, 'alpUtxos')
+      assert.property(result, 'tokenUtxos')
       assert.property(result, 'xecUtxos')
-      assert.isArray(result.alpUtxos)
+      assert.isArray(result.tokenUtxos)
       assert.isArray(result.xecUtxos)
 
-      assert.equal(result.alpUtxos.length, 1)
+      assert.equal(result.tokenUtxos.length, 1)
       assert.equal(result.xecUtxos.length, 1) // Only pure XEC UTXOs to prevent token burns
 
       // Verify ALP UTXO has correct token ID
-      assert.equal(result.alpUtxos[0].token.tokenId, tokenMocks.TGR_TOKEN_ID)
-      assert.equal(result.alpUtxos[0].token.tokenType.protocol, 'ALP')
+      assert.equal(result.tokenUtxos[0].token.tokenId, tokenMocks.TGR_TOKEN_ID)
+      assert.equal(result.tokenUtxos[0].token.tokenType.protocol, 'ALP')
     })
 
     it('should handle empty UTXO array', () => {
       const result = uut._categorizeUtxos([], tokenMocks.TGR_TOKEN_ID)
 
-      assert.deepEqual(result.alpUtxos, [])
+      assert.deepEqual(result.tokenUtxos, [])
       assert.deepEqual(result.xecUtxos, [])
     })
 
@@ -385,8 +388,8 @@ describe('#ALPTokenHandler', () => {
       const result = uut._categorizeUtxos(tokenMocks.mixedTokenUtxos, tokenMocks.TGR_TOKEN_ID)
 
       // Should not include FLCT (SLP) tokens in ALP results
-      assert.equal(result.alpUtxos.length, 1)
-      assert.notEqual(result.alpUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)
+      assert.equal(result.tokenUtxos.length, 1)
+      assert.notEqual(result.tokenUtxos[0].token.tokenId, tokenMocks.FLCT_TOKEN_ID)
     })
   })
 
@@ -495,17 +498,17 @@ describe('#ALPTokenHandler', () => {
     })
   })
 
-  describe('#_estimateTransactionFee', () => {
-    it('should estimate ALP transaction fee with eMPP overhead', () => {
-      const fee = uut._estimateTransactionFee(2, 4, 1.2) // 2 inputs, 4 outputs, 1.2 sats/byte
+  describe('#estimateFee (from tx-utils)', () => {
+    it('should estimate ALP transaction fee', () => {
+      const fee = estimateFee(2, 4, 1.2) // 2 inputs, 4 outputs, 1.2 sats/byte
 
       assert.isNumber(fee)
       assert.isAbove(fee, 0)
 
-      // Should be slightly higher than basic transaction due to eMPP script overhead
-      const basicFee = (2 * 148) + (4 * 34) + 10 // Basic calculation
-
-      assert.isAbove(fee, basicFee * 1.2) // Should account for eMPP overhead
+      // Schnorr P2PKH size estimate: (inputs * 141) + (outputs * 34) + 10
+      const expectedSize = (2 * 141) + (4 * 34) + 10
+      const expectedFee = Math.ceil(expectedSize * 1.2)
+      assert.equal(fee, expectedFee)
     })
   })
 

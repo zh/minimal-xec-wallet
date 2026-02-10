@@ -97,9 +97,6 @@ class MinimalXECWallet {
     this.walletInfoCreated = false
     this.walletInfoPromise = this.create(hdPrivateKeyOrMnemonic)
 
-    // Initialize WebAssembly early for better browser compatibility
-    this.wasmInitPromise = this._initializeWASM()
-
     // Bind the 'this' object to all functions
     this.create = this.create.bind(this)
     this.initialize = this.initialize.bind(this)
@@ -296,40 +293,10 @@ class MinimalXECWallet {
     }
   }
 
-  // Initialize WebAssembly for browser compatibility
-  async _initializeWASM () {
-    try {
-      // Only initialize WASM in browser environments
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        // Dynamic import to avoid issues in Node.js environments
-        const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
-
-        if (wasmShim && wasmShim.init) {
-          console.log('Initializing WebAssembly for browser compatibility...')
-          await wasmShim.init()
-          console.log('WebAssembly initialization completed')
-        }
-      }
-
-      return true
-    } catch (err) {
-      // WASM initialization failure should not prevent wallet from working
-      console.warn('WebAssembly initialization failed (using fallbacks):', err.message)
-      return false
-    }
-  }
-
   // Initialize is called to initialize the UTXO store, download token data, and
   // get a balance of the wallet.
   async initialize () {
     await this.walletInfoPromise
-
-    // Ensure WASM is initialized (but don't block on it)
-    try {
-      await this.wasmInitPromise
-    } catch (err) {
-      console.warn('WASM initialization incomplete, continuing with fallbacks')
-    }
 
     await this.utxos.initUtxoStore(this.walletInfo.xecAddress)
 
@@ -668,24 +635,6 @@ class MinimalXECWallet {
         throw new Error('Wallet UTXOs not loaded. Try calling initialize() first.')
       }
 
-      // Verify WASM initialization status and provide user feedback
-      let wasmStatus = false
-      try {
-        if (typeof window !== 'undefined') {
-          const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
-          wasmStatus = wasmShim.isInitialized()
-
-          if (!wasmStatus) {
-            console.warn('WebAssembly not fully initialized - using JavaScript fallbacks for token operations')
-            console.warn('This may result in slower performance but full functionality is preserved')
-          } else {
-            console.log('WebAssembly cryptographic functions active - optimized performance enabled')
-          }
-        }
-      } catch (err) {
-        console.warn('WASM status check failed, proceeding with fallbacks:', err.message)
-      }
-
       // Determine finality options
       const finalityOptions = {
         awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
@@ -754,7 +703,6 @@ class MinimalXECWallet {
 
       return txid
     } catch (err) {
-      console.error('Error in sendAllXec():', err.message)
       throw this._sanitizeError(err, 'Send all XEC failed')
     }
   }
@@ -800,7 +748,6 @@ class MinimalXECWallet {
 
       return txid
     } catch (err) {
-      console.error('Error in sendOpReturn():', err.message)
       throw this._sanitizeError(err, 'OP_RETURN send failed')
     }
   }
@@ -1028,22 +975,6 @@ class MinimalXECWallet {
 
       if (!amount || typeof amount !== 'number' || amount <= 0) {
         throw new Error('Amount is required and must be a positive number')
-      }
-
-      // Verify WASM initialization status for token burning operations
-      try {
-        if (typeof window !== 'undefined') {
-          const wasmShim = require('./browser-shims/ecash_lib_wasm_browser')
-          const wasmStatus = wasmShim.isInitialized()
-
-          if (!wasmStatus) {
-            console.warn('WebAssembly not fully initialized - using JavaScript fallbacks for token burning')
-          } else {
-            console.log('WebAssembly enabled for optimized token burning performance')
-          }
-        }
-      } catch (err) {
-        console.warn('WASM status check failed for token burning, proceeding with fallbacks:', err.message)
       }
 
       // Use hybrid token manager for protocol detection and routing
