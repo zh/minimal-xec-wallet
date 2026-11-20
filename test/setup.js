@@ -187,6 +187,7 @@ Module.prototype.require = function (id) {
   if (id === 'ecash-lib') {
     return {
       TxBuilder: MockTxBuilder,
+      Tx: { fromHex: sinon.stub().returns({ txid: () => 'cd'.repeat(32) }) },
       P2PKHSignatory: sinon.stub().returns('mock_signatory'),
       fromHex: sinon.stub().returns(Buffer.from('mock_buffer')),
       toHex: sinon.stub().returns('020000000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),

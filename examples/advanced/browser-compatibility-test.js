@@ -8,6 +8,21 @@
 /* global WebAssembly, Worker, navigator, crypto */
 
 const MinimalXECWallet = require('../../index')
+const { Ecc } = require('ecash-lib')
+const WalletHelper = require('../utils/wallet-helper')
+
+// Use the shared examples/wallet.json wallet when present, else a fresh one
+const savedWallet = WalletHelper.loadWallet()
+const walletSecret = savedWallet ? savedWallet.mnemonic : undefined
+
+// ecash-lib initializes its WASM synchronously at import; check it actually works
+function wasmCryptoWorks () {
+  try {
+    return new Ecc().derivePubkey(new Uint8Array(32).fill(1)).length === 33
+  } catch (err) {
+    return false
+  }
+}
 
 // Browser compatibility detection utility
 function detectBrowserCapabilities () {
@@ -111,13 +126,13 @@ async function testWalletCompatibility () {
     const startTime = Date.now()
 
     // Create wallet (this will trigger WASM initialization)
-    const wallet = new MinimalXECWallet()
+    const wallet = new MinimalXECWallet(walletSecret)
 
     console.log('Waiting for wallet creation...')
     await wallet.walletInfoPromise
 
-    console.log('Waiting for WASM initialization...')
-    const wasmResult = await wallet.wasmInitPromise
+    console.log('Checking ecash-lib crypto...')
+    const wasmResult = wasmCryptoWorks()
 
     console.log('Initializing wallet services...')
     await wallet.initialize()
@@ -128,7 +143,7 @@ async function testWalletCompatibility () {
     console.log('✅ Wallet initialization completed!')
     console.log('═══════════════════════════════════════════════')
     console.log(`Initialization Time: ${initTime}ms`)
-    console.log(`WASM Initialized: ${wasmResult ? '✅' : '❌ (using fallbacks)'}`)
+    console.log(`ecash-lib Crypto: ${wasmResult ? '✅' : '❌'}`)
     console.log(`Wallet Address: ${wallet.walletInfo.xecAddress}`)
     console.log(`Wallet Created: ${wallet.walletInfoCreated ? '✅' : '❌'}`)
     console.log(`Services Initialized: ${wallet.isInitialized ? '✅' : '❌'}`)
@@ -158,9 +173,8 @@ async function testBasicOperations () {
   console.log('🔧 Testing Basic Wallet Operations...\n')
 
   try {
-    const wallet = new MinimalXECWallet()
+    const wallet = new MinimalXECWallet(walletSecret)
     await wallet.walletInfoPromise
-    await wallet.wasmInitPromise
     await wallet.initialize()
 
     console.log('Testing wallet operations...')
@@ -226,7 +240,7 @@ async function runCompatibilityTests () {
 
     if (results.walletInit.success) {
       console.log(`Initialization Time: ${results.walletInit.initTime}ms`)
-      console.log(`WASM Status: ${results.walletInit.wasmResult ? 'Active' : 'Fallback'}`)
+      console.log(`ecash-lib Crypto: ${results.walletInit.wasmResult ? 'Working' : 'Broken'}`)
     }
 
     console.log('═══════════════════════════════════════════════')

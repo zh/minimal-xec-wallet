@@ -40,7 +40,7 @@ async function runInfrastructureTests () {
       console.log(`   ✅ XEC Balance: ${balance} XEC`)
 
       const utxos = await wallet.getUtxos()
-      console.log(`   ✅ UTXOs: ${utxos.length} found`)
+      console.log(`   ✅ UTXOs: ${utxos.utxos.length} found`)
 
       const isValid = wallet._validateAddress(walletData.xecAddress)
       console.log(`   ✅ Address validation: ${isValid}`)
@@ -164,7 +164,7 @@ async function runInfrastructureTests () {
 
       // Test protocol detection methods through hybrid manager
       const utxos = await wallet.getUtxos()
-      console.log(`   ✅ UTXO Retrieval: ${utxos.length || 0} UTXOs found`)
+      console.log(`   ✅ UTXO Retrieval: ${utxos.utxos.length} UTXOs found`)
 
       // Test token categorization capability
       const tokens = await wallet.listETokens()

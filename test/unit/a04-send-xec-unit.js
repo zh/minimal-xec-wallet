@@ -270,6 +270,30 @@ describe('#send-xec.js - XEC Transaction Sending', () => {
     })
   })
 
+  describe('#token UTXO protection', () => {
+    // A 546-sat token UTXO next to plain XEC: spending it as XEC would burn the tokens
+    const tokenUtxo = {
+      outpoint: { txid: 'aa'.repeat(32), outIdx: 1 },
+      blockHeight: 629922,
+      isCoinbase: false,
+      sats: 546n,
+      isFinal: true,
+      token: { tokenId: 'bb'.repeat(32), atoms: 10n, isMintBaton: false }
+    }
+    const utxos = () => [...mockUtxos.simpleXecUtxos.utxos, tokenUtxo]
+
+    it('createSendAllTx should not spend token UTXOs', async () => {
+      const calcFee = sandbox.spy(uut, '_calcFee')
+      await uut.createSendAllTx(mockWallet.mockXecAddresses.valid[0], mockWallet.mockXecWalletInfo, utxos())
+      assert.isTrue(calcFee.calledWith(1, 1))
+    })
+
+    it('_selectUtxos should not select token UTXOs even when short of funds', () => {
+      const outputs = [{ address: mockWallet.mockXecAddresses.valid[0], amountSat: 150000 }]
+      assert.throws(() => uut._selectUtxos(outputs, utxos()), /Insufficient/)
+    })
+  })
+
   describe('#getKeyPairFromMnemonic', () => {
     it('should derive key pair from wallet info', async () => {
       const walletInfo = mockWallet.mockXecWalletInfo

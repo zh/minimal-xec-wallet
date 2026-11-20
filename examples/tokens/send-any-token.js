@@ -249,7 +249,7 @@ async function sendAnyToken () {
       console.log('\n🎯 Token Selection Issue:')
       console.log('   • Verify token ticker or ID is correct')
       console.log('   • Check available tokens: node examples/tokens/list-all-tokens.js')
-    } else if (err.message.includes('insufficient')) {
+    } else if (/insufficient/i.test(err.message)) {
       console.log('\n💸 Balance Issue:')
       console.log('   • Check token balance is sufficient')
       console.log('   • Ensure XEC available for fees')

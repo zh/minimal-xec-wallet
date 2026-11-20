@@ -185,7 +185,7 @@ async function sendXec () {
     console.error('❌ Failed to send XEC:', err.message)
 
     // Provide helpful error context
-    if (err.message.includes('insufficient')) {
+    if (/insufficient/i.test(err.message)) {
       console.log('\n💸 Insufficient Funds:')
       console.log('   • Your wallet does not have enough XEC for this transaction')
       console.log('   • Remember that transaction fees are deducted from your balance')

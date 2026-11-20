@@ -46,7 +46,7 @@ async function testUtxoConsolidation () {
     const balance = await wallet.getXecBalance()
     const utxos = await wallet.getUtxos()
     console.log(`   XEC Balance: ${balance} XEC`)
-    console.log(`   Total UTXOs: ${utxos.length}`)
+    console.log(`   Total UTXOs: ${utxos.utxos.length}`)
     console.log('')
 
     // Get UTXO distribution

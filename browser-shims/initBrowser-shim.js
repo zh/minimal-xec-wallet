@@ -1,7 +1,7 @@
 /**
- * Pure-JS replacement for ecash-lib's initBrowser.js
+ * Pure-JS replacement for ecash-lib's initWasm.js (initBrowser.js before 4.13)
  *
- * The original initBrowser.js calls ffi.initSync(wasmRaw) which uses
+ * The original calls ffi.initSync(wasmRaw) which uses
  * new WebAssembly.Module(1.2MB buffer) synchronously — blocked by modern
  * Chrome on the main thread for buffers > 4KB, crashing the UMD factory.
  *
@@ -189,12 +189,18 @@ class NobleEcc {
     return sum.toRawBytes(true)
   }
 
+  // Match ecash-lib WASM / Bitcoin signed-message layout: header(31+recid) || r || s.
+  // noble's 'recovered' format is recid(0..3) || r || s, so translate the first byte.
   signRecoverable (seckey, msg) {
-    return secp256k1.sign(msg, seckey, { lowS: true, prehash: false, format: 'recovered' })
+    const sig = secp256k1.sign(msg, seckey, { lowS: true, prehash: false, format: 'recovered' })
+    sig[0] = 31 + sig[0]
+    return sig
   }
 
   recoverSig (sig, msg) {
-    return secp256k1.recoverPublicKey(sig, msg, { prehash: false })
+    const nobleSig = Uint8Array.from(sig)
+    nobleSig[0] = (sig[0] - 27) & 3
+    return secp256k1.recoverPublicKey(nobleSig, msg, { prehash: false })
   }
 }
 

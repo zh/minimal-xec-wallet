@@ -4,6 +4,7 @@
 */
 
 const MinimalXECWallet = require('../../index')
+const { Address } = require('ecash-lib')
 const WalletHelper = require('../utils/wallet-helper')
 
 async function getTransactions () {
@@ -46,6 +47,9 @@ async function getTransactions () {
       return
     }
 
+    // Our P2PKH output script, to spot our inputs/outputs in each tx
+    const myScript = Address.fromCashAddress(walletData.xecAddress).toScriptHex()
+
     // Analyze transactions
     let receivedCount = 0
     let sentCount = 0
@@ -55,18 +59,20 @@ async function getTransactions () {
     console.log('\n📊 Transaction List (most recent first):')
     console.log('─'.repeat(80))
 
-    transactions.slice(0, 10).forEach((tx, index) => {
+    // Totals cover every transaction; only the 10 most recent are printed
+    transactions.forEach((tx, index) => {
+      const log = index < 10 ? console.log : () => {}
       const txidShort = `${tx.txid.substring(0, 12)}...${tx.txid.substring(52)}`
       const isConfirmed = tx.block !== null
       const status = isConfirmed ? '✅ Confirmed' : '⏳ Pending'
 
-      console.log(`${index + 1}. ${txidShort} - ${status}`)
+      log(`${index + 1}. ${txidShort} - ${status}`)
 
       if (isConfirmed) {
         const date = new Date(tx.block.timestamp * 1000).toLocaleString()
-        console.log(`   Block: ${tx.block.height} | Time: ${date}`)
+        log(`   Block: ${tx.block.height} | Time: ${date}`)
       } else {
-        console.log('   Block: Unconfirmed | Time: Pending')
+        log('   Block: Unconfirmed | Time: Pending')
       }
 
       // Analyze inputs and outputs to determine if this was received or sent
@@ -76,36 +82,37 @@ async function getTransactions () {
 
       // Check outputs for our address
       tx.outputs.forEach(output => {
-        if (output.script && output.script.includes(walletData.xecAddress.replace('ecash:', ''))) {
+        if (output.outputScript === myScript) {
           isReceived = true
-          netAmount += parseInt(output.value)
+          netAmount += Number(output.sats)
         }
       })
 
       // Check inputs for our address (indicates we sent this transaction)
       tx.inputs.forEach(input => {
-        if (input.prevOut && input.prevOut.script &&
-            input.prevOut.script.includes(walletData.xecAddress.replace('ecash:', ''))) {
+        if (input.outputScript === myScript) {
           isSent = true
-          netAmount -= parseInt(input.prevOut.value)
+          netAmount -= Number(input.sats)
         }
       })
 
       if (isReceived && !isSent) {
-        console.log(`   📥 Received: ${(netAmount / 100).toLocaleString()} XEC`)
+        log(`   📥 Received: ${(netAmount / 100).toLocaleString()} XEC`)
         receivedCount++
         totalReceived += netAmount
       } else if (isSent && !isReceived) {
-        console.log(`   📤 Sent: ${(Math.abs(netAmount) / 100).toLocaleString()} XEC`)
+        log(`   📤 Sent: ${(Math.abs(netAmount) / 100).toLocaleString()} XEC`)
         sentCount++
         totalSent += Math.abs(netAmount)
       } else if (isSent && isReceived) {
+        if (netAmount > 0) totalReceived += netAmount
+        else totalSent += Math.abs(netAmount)
         const action = netAmount > 0 ? 'Net Received' : 'Net Sent'
-        console.log(`   🔄 ${action}: ${(Math.abs(netAmount) / 100).toLocaleString()} XEC`)
+        log(`   🔄 ${action}: ${(Math.abs(netAmount) / 100).toLocaleString()} XEC`)
       }
 
-      console.log(`   Inputs: ${tx.inputs.length} | Outputs: ${tx.outputs.length}`)
-      console.log()
+      log(`   Inputs: ${tx.inputs.length} | Outputs: ${tx.outputs.length}`)
+      log()
     })
 
     if (transactions.length > 10) {

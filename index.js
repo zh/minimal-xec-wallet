@@ -32,17 +32,8 @@ class MinimalXECWallet {
     // HD Derivation path for XEC (coin type 899)
     this.hdPath = this.advancedOptions.hdPath || "m/44'/899'/0'/0/0"
 
-    // Default Chronik endpoints (working as of 2025)
     const chronikOptions = {
-      chronikUrls: advancedOptions.chronikUrls || [
-        'https://chronik.e.cash',
-        'https://chronik.be.cash',
-        'https://xec.paybutton.org',
-        'https://chronik.pay2stay.com/xec',
-        'https://chronik.pay2stay.com/xec2',
-        'https://chronik1.alitayin.com',
-        'https://chronik2.alitayin.com'
-      ]
+      chronikUrls: advancedOptions.chronikUrls || AdapterRouter.DEFAULT_CHRONIK_URLS
     }
 
     // Set the fee rate (XEC uses same structure as BCH, but lower amounts)
@@ -70,9 +61,8 @@ class MinimalXECWallet {
     // Initialize key derivation
     this.keyDerivation = new KeyDerivation()
 
-    // Initialize chronik client with fallback strategy - use first endpoint immediately
-    // The adapter router will handle connection strategy internally
-    this.chronik = new ChronikClient(chronikOptions.chronikUrls[0])
+    // ChronikClient takes the full list and fails over between them itself
+    this.chronik = new ChronikClient(chronikOptions.chronikUrls)
     chronikOptions.chronik = this.chronik
 
     // Instantiate the adapter router (it handles connection strategy internally)
@@ -964,7 +954,7 @@ class MinimalXECWallet {
     }
   }
 
-  async burnETokens (tokenId, amount, satsPerByte = this.fee) {
+  async burnETokens (tokenId, amount, satsPerByte = this.fee, options = {}) {
     try {
       // Wait for wallet to be initialized
       await this.walletInfoPromise
@@ -994,8 +984,12 @@ class MinimalXECWallet {
           privateKey: this.walletInfo.privateKey,
           publicKey: this.walletInfo.publicKey
         },
-        this.utxos.utxoStore.utxos,
-        satsPerByte
+        this.utxos.utxoStore.xecUtxos,
+        satsPerByte,
+        {
+          awaitFinality: options.awaitFinality ?? this.avalancheOptions.defaultAwaitFinality,
+          finalityTimeout: options.finalityTimeout ?? this.avalancheOptions.finalityTimeout
+        }
       )
 
       // Refresh UTXO cache after successful token burn to prevent stale UTXO issues
@@ -1032,7 +1026,7 @@ class MinimalXECWallet {
           privateKey: this.walletInfo.privateKey,
           publicKey: this.walletInfo.publicKey
         },
-        this.utxos.utxoStore.utxos
+        this.utxos.utxoStore.xecUtxos
       )
 
       // Refresh UTXO cache after successful token burn to prevent stale UTXO issues

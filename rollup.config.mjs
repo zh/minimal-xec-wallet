@@ -40,11 +40,11 @@ export default {
     {
       name: 'ecash-lib-init-shim',
       resolveId (source, importer) {
-        // Redirect initBrowser.js to our pure-JS shim
+        // Redirect ecash-lib's WASM init (initWasm.js since 4.13, initBrowser.js before) to our pure-JS shim
         if (
           importer &&
           importer.includes('ecash-lib') &&
-          (source === './initBrowser.js' || source.endsWith('/initBrowser.js'))
+          /(^|\/)init(Wasm|Browser)\.js$/.test(source)
         ) {
           return path.resolve(__dirname, 'browser-shims/initBrowser-shim.js')
         }

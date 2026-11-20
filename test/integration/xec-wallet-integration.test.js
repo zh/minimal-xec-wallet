@@ -10,15 +10,7 @@ const assert = require('chai').assert
 const MinimalXECWallet = require('../../index')
 
 // Test configuration - using working Chronik endpoints
-const CHRONIK_URLS = [
-  'https://chronik.e.cash',
-  'https://chronik.be.cash',
-  'https://xec.paybutton.org',
-  'https://chronik.pay2stay.com/xec',
-  'https://chronik.pay2stay.com/xec2',
-  'https://chronik1.alitayin.com',
-  'https://chronik2.alitayin.com'
-]
+const CHRONIK_URLS = require('../../lib/adapters/router').DEFAULT_CHRONIK_URLS
 
 describe('#Integration Tests - XEC Wallet with Chronik API', () => {
   let wallet

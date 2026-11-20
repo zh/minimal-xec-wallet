@@ -837,7 +837,7 @@ const txid = await wallet.sendETokens(
 )
 ```
 
-### async burnETokens(tokenId, amount, satsPerByte)
+### async burnETokens(tokenId, amount, satsPerByte, options)
 
 Burns a specific amount of eTokens (permanently destroys them) with automatic SLP/ALP protocol detection.
 
@@ -845,6 +845,9 @@ Burns a specific amount of eTokens (permanently destroys them) with automatic SL
 - `tokenId` (string) - Token ID to burn
 - `amount` (number) - Amount of tokens to burn (in display units)
 - `satsPerByte` (number, optional) - Fee rate (default: wallet fee setting)
+- `options` (object, optional) - Transaction options
+  - `awaitFinality` (boolean) - Wait for Avalanche finality (~3 sec). Defaults to `avalanche.defaultAwaitFinality`
+  - `finalityTimeout` (number) - Timeout in ms. Defaults to `avalanche.finalityTimeout`
 
 **Returns:** `string` - Transaction ID (TXID)
 

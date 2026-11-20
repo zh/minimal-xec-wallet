@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased] - 2026-11-20
+
+### Fixed
+- **Chronik failover never worked**: `index.js` built `ChronikClient` from `chronikUrls[0]` only, so one dead server took the wallet down. It now passes the full list (chronik-client fails over internally).
+- **Dead default Chronik servers**: removed `chronik.be.cash` (expired TLS cert) and `chronik1/2.alitayin.com` (down). Defaults now lead with the servers Cashtab uses (`chronik-native{2,3,1}.fabien.cash`), then `chronik.e.cash`, `chronik.pay2stay.com/xec{,2}`, `xec.paybutton.org`. The list lives once in `lib/adapters/router.js` (`DEFAULT_CHRONIK_URLS`).
+- **Browser message signatures were not interoperable**: the noble shim emitted `recid(0/1)||r||s`; ecash-lib/Cashtab/Electrum expect header byte `31+recid`. Browser-signed messages now verify in Node and vice versa (`test/unit/a16-browser-shim-unit.js`).
+- **Browser bundle with ecash-lib >= 4.13**: ecash-lib now initializes WASM from `initWasm.js` (not `initBrowser.js`); the rollup shim redirect matches both. Removed the `browser` field pointing at the no-longer-existing `ecash-lib/dist/indexBrowser.js`.
+- **`burnETokens()` / `burnAllETokens()` always crashed** (`Cannot read properties of undefined (reading 'find')`): they read the nonexistent `utxoStore.utxos`; now pass `utxoStore.xecUtxos`. `burnETokens` also takes `options` (`awaitFinality`, `finalityTimeout`) like the send methods (`test/unit/a01-minimal-xec-wallet-unit.js`).
+- **`sendAllXec()` burned every token in the wallet**: XEC sends could spend 546-sat token UTXOs as plain XEC. `SecurityValidator.filterSecureUtxos` now drops UTXOs carrying a token (`test/unit/a04-send-xec-unit.js`, "token UTXO protection").
+- **Partial token burns were refused by Chronik** ("Unexpected burn"): they burned by omission. ALP now sends one tx with a SEND (change) + BURN section; SLP (one message per tx) sends a split SEND to self, then a BURN of the split output. `burnTokens()` broadcasts both in order and returns the burn txid (`test/unit/a17-token-burn-real-lib-unit.js`).
+- **Examples**: fixed for the current API (`utxos.utxos`, bigint `sats`, `outputScript` matching in `get-transactions.js`, which also miscounted mixed txs), the removed `wasmInitPromise`, and case-sensitive "insufficient" error matching.
+
+### Changed
+- `ecash-lib` ^4.7.0 -> ^4.14.6, `ecashaddrjs` ^2.0.0 -> ^2.0.3.
+- `chronik-client` pinned to exactly `4.3.1`: npm releases 4.3.2-4.4.0 ship without `dist/src` and throw on `require()`.
+
 ## [2.2.3] - 2025-02-10
 
 ### Fixed

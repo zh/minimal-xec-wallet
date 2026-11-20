@@ -209,7 +209,7 @@ async function sendToMultiple () {
     console.error('❌ Failed to send multi-output transaction:', err.message)
 
     // Provide helpful error context
-    if (err.message.includes('insufficient')) {
+    if (/insufficient/i.test(err.message)) {
       console.log('\n💸 Insufficient Funds:')
       console.log('   • Your wallet does not have enough XEC for this transaction')
       console.log('   • Multi-output transactions require higher fees')

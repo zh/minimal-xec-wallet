@@ -126,7 +126,8 @@ describe('#SLPTokenHandler', () => {
       )
 
       assert.equal(result, 'mock_transaction_id')
-      assert.isTrue(mockAr.sendTx.calledOnce)
+      // Partial SLP burn = split tx + burn tx, broadcast in order
+      assert.isTrue(mockAr.sendTx.calledTwice)
     })
   })
 
@@ -292,7 +293,7 @@ describe('#SLPTokenHandler', () => {
 
   describe('#createBurnTransaction', () => {
     it('should create valid SLP burn transaction', async () => {
-      const burnAmount = 2
+      const burnAmount = 6 // full balance: single BURN tx
 
       const txHex = await uut.createBurnTransaction(
         tokenMocks.FLCT_TOKEN_ID,

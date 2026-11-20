@@ -44,16 +44,16 @@ async function analyzeUtxos (wallet) {
   }
 
   // Calculate statistics
-  const totalValue = spendableUtxos.reduce((sum, utxo) => sum + utxo.value, 0)
+  const totalValue = spendableUtxos.reduce((sum, utxo) => sum + Number(utxo.sats), 0)
   const averageValue = totalValue / spendableUtxos.length
-  const values = spendableUtxos.map(utxo => utxo.value).sort((a, b) => a - b)
+  const values = spendableUtxos.map(utxo => Number(utxo.sats)).sort((a, b) => a - b)
   const medianValue = values[Math.floor(values.length / 2)]
 
   // Categorize UTXOs
-  const dustUtxos = spendableUtxos.filter(utxo => utxo.value < 546) // < 5.46 XEC
-  const smallUtxos = spendableUtxos.filter(utxo => utxo.value >= 546 && utxo.value < 10000) // 5.46 - 100 XEC
-  const mediumUtxos = spendableUtxos.filter(utxo => utxo.value >= 10000 && utxo.value < 100000) // 100 - 1000 XEC
-  const largeUtxos = spendableUtxos.filter(utxo => utxo.value >= 100000) // > 1000 XEC
+  const dustUtxos = spendableUtxos.filter(utxo => Number(utxo.sats) < 546) // < 5.46 XEC
+  const smallUtxos = spendableUtxos.filter(utxo => Number(utxo.sats) >= 546 && Number(utxo.sats) < 10000) // 5.46 - 100 XEC
+  const mediumUtxos = spendableUtxos.filter(utxo => Number(utxo.sats) >= 10000 && Number(utxo.sats) < 100000) // 100 - 1000 XEC
+  const largeUtxos = spendableUtxos.filter(utxo => Number(utxo.sats) >= 100000) // > 1000 XEC
 
   console.log('\n📊 UTXO Analysis:')
   console.log('═'.repeat(60))
@@ -244,7 +244,7 @@ async function optimizeUtxos () {
     console.error('❌ Failed to optimize UTXOs:', err.message)
 
     // Provide helpful error context
-    if (err.message.includes('insufficient')) {
+    if (/insufficient/i.test(err.message)) {
       console.log('\n💸 Insufficient Funds:')
       console.log('   • Your wallet needs enough XEC to pay consolidation fees')
       console.log('   • Try optimizing when you have a larger balance')

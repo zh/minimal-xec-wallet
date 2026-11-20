@@ -3,14 +3,15 @@
 */
 
 const MinimalXECWallet = require('../../index')
-const fs = require('fs')
+const WalletHelper = require('../utils/wallet-helper')
 
 async function simpleTest () {
   try {
     console.log('🔧 Simple UTXO Consolidation Test...\n')
 
-    // Load wallet data directly
-    const walletData = JSON.parse(fs.readFileSync('./wallet.json'))
+    // Load the shared examples/wallet.json
+    const walletData = WalletHelper.loadWallet()
+    if (!walletData) return
     console.log('✅ Wallet loaded:')
     console.log(`   Address: ${walletData.xecAddress}`)
     console.log('')
@@ -48,7 +49,7 @@ async function simpleTest () {
     console.log('📦 Getting UTXOs...')
     try {
       const utxos = await wallet.getUtxos()
-      console.log(`   UTXOs count: ${utxos.length}`)
+      console.log(`   UTXOs count: ${utxos.utxos.length}`)
       if (utxos.length > 0) {
         console.log(`   First UTXO: ${JSON.stringify(utxos[0], null, 2)}`)
       }

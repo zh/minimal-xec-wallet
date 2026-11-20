@@ -63,12 +63,12 @@
     "@noble/curves": "^2.0.1",
     "@scure/bip39": "^1.6.0",
     "bs58": "^5.0.0",
-    "chronik-client": "^4.1.0",
+    "chronik-client": "4.3.1",
     "create-hash": "^1.2.0",
     "create-hmac": "^1.1.7",
     "crypto-js": "^4.2.0",
-    "ecash-lib": "^4.5.1",
-    "ecashaddrjs": "^2.0.0"
+    "ecash-lib": "^4.14.6",
+    "ecashaddrjs": "^2.0.3"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.0",
@@ -88,11 +88,11 @@
     "husky": "4.3.8",
     "mocha": "^11.0.0",
     "nyc": "15.1.0",
+    "qrcode-terminal": "^0.12.0",
     "rollup": "^4.30.0",
     "rollup-plugin-polyfill-node": "^0.13.0",
     "semantic-release": "^25.0.0",
     "sinon": "^17.0.0",
-    "qrcode-terminal": "^0.12.0",
     "standard": "16.0.4",
     "stream-browserify": "^3.0.0"
   },
@@ -108,9 +108,6 @@
         "npmPublish": true
       }
     ]
-  },
-  "browser": {
-    "ecash-lib": "ecash-lib/dist/indexBrowser.js"
   },
   "husky": {
     "hooks": {

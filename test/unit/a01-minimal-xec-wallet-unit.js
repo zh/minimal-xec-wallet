@@ -424,6 +424,30 @@ describe('#index.js - Minimal XEC Wallet', () => {
       }
     })
 
+    it('burnETokens should pass wallet UTXOs and finality options to the token manager', async () => {
+      uut.isInitialized = true
+      uut.utxos.utxoStore = { xecUtxos: mockUtxos.simpleXecUtxos.utxos }
+      sandbox.stub(uut.utxos, 'refreshCache').resolves()
+      const burn = sandbox.stub(uut.hybridTokens, 'burnTokens').resolves('burn_txid')
+
+      const txid = await uut.burnETokens('a'.repeat(64), 1, 1.2, { awaitFinality: true })
+
+      assert.equal(txid, 'burn_txid')
+      assert.equal(burn.firstCall.args[3], mockUtxos.simpleXecUtxos.utxos)
+      assert.isTrue(burn.firstCall.args[5].awaitFinality)
+    })
+
+    it('burnAllETokens should pass wallet UTXOs to the token manager', async () => {
+      uut.isInitialized = true
+      uut.utxos.utxoStore = { xecUtxos: mockUtxos.simpleXecUtxos.utxos }
+      sandbox.stub(uut.utxos, 'refreshCache').resolves()
+      const burnAll = sandbox.stub(uut.hybridTokens, 'burnAllTokens').resolves('burn_txid')
+
+      await uut.burnAllETokens('a'.repeat(64))
+
+      assert.equal(burnAll.firstCall.args[2], mockUtxos.simpleXecUtxos.utxos)
+    })
+
     it('getETokenData should require valid inputs', async () => {
       try {
         await uut.getETokenData() // No token ID provided

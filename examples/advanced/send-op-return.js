@@ -209,7 +209,7 @@ async function sendOpReturn () {
     console.error('❌ Failed to send OP_RETURN:', err.message)
 
     // Provide helpful error context
-    if (err.message.includes('insufficient')) {
+    if (/insufficient/i.test(err.message)) {
       console.log('\n💸 Insufficient Funds:')
       console.log('   • Your wallet does not have enough XEC for this transaction')
       console.log('   • OP_RETURN transactions still require fees')

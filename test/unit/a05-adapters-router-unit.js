@@ -35,7 +35,7 @@ describe('#adapters/router.js - Chronik API Router', () => {
 
     const config = {
       chronik: mockChronik,
-      chronikUrls: ['https://chronik.be.cash']
+      chronikUrls: ['https://chronik.e.cash']
     }
 
     uut = new AdapterRouter(config)
@@ -391,6 +391,21 @@ describe('#adapters/router.js - Chronik API Router', () => {
       // Should only call Chronik once due to caching
       assert.equal(mockChronik.script.callCount, 1)
     })
+
+    // A send spends cached UTXOs; serving them again makes the next send a mempool conflict
+    for (const [method, arg] of [['sendTx', 'aa'], ['sendTxAndFinalize', 'aa'], ['sendTxsAndFinalize', ['aa']]]) {
+      it(`${method} invalidates the UTXO cache`, async () => {
+        mockChronik.broadcastAndFinalizeTx = sandbox.stub().resolves({ txid: 't' })
+        mockChronik.broadcastAndFinalizeTxs = sandbox.stub().resolves([{ txid: 't' }])
+        const address = mockWallet.mockXecAddresses.valid[0]
+
+        await uut.getUtxos(address)
+        await uut[method](arg)
+        await uut.getUtxos(address)
+
+        assert.equal(mockChronik.script.callCount, 2)
+      })
+    }
   })
 
   describe('#sendTxAndFinalize - Avalanche Pre-Consensus', () => {
